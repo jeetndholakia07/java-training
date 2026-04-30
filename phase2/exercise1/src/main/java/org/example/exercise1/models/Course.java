@@ -34,7 +34,6 @@ public class Course {
         return courseName;
     }
 
-    @CreationTimestamp(source = SourceType.DB)
     public Timestamp getCreationTimestamp() {
         return creationTimestamp;
     }
