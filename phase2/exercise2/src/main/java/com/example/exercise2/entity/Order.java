@@ -29,7 +29,7 @@ public class Order {
     @Column(name = "last_updated_timestamp")
     @UpdateTimestamp(source = SourceType.DB)
     private Timestamp lastUpdatedTimestamp;
-    @OneToMany(mappedBy = "id", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> orderItems;
 
     public int getId() {

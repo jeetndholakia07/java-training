@@ -26,6 +26,8 @@ public class Inventory {
     @Column(name = "last_updated_timestamp")
     @UpdateTimestamp(source = SourceType.DB)
     private Timestamp lastUpdatedTimestamp;
+    @Version
+    private Integer version;
 
     public int getId() {
         return id;

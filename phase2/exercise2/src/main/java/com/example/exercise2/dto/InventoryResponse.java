@@ -44,4 +44,8 @@ public class InventoryResponse {
     public void setStatus(Status status) {
         this.status = status;
     }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 }
