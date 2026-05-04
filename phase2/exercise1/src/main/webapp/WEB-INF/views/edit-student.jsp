@@ -7,6 +7,42 @@
   <title>Edit Student</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script>
+    const today = new Date().toISOString().split("T")[0];
+    document.getElementById("birthDate").setAttribute("max", today);
+    function validateForm(){
+      const nameRegex = /^[A-Za-z]+([ '-][A-Za-z]+)*$/
+      const selectedCourses = document.querySelectorAll('input[name="courses"]:checked');
+      const firstName = document.getElementById("firstName").value.trim();
+      const middleName = document.getElementById("middleName").value.trim();
+      const lastName = document.getElementById("lastName").value.trim();
+      const errorBox = document.getElementById("errors");
+      const birthDate = document.getElementById("birthDate").value;
+      errorBox.textContent = "";
+      if(!nameRegex.test(firstName)){
+        errorBox.textContent = "Invalid first name.";
+        return false;
+      }
+
+      if(!nameRegex.test(middleName)){
+        errorBox.textContent = "Invalid middle name.";
+        return false;
+      }
+
+      if(!nameRegex.test(lastName)){
+        errorBox.textContent = "Invalid last name.";
+        return false;
+      }
+      if(selectedCourses.length === 0){
+        errorBox.textContent = "Please select atleast any one course.";
+        return false;
+      }
+
+      if (birthDate > today) {
+        errorBox.textContent = "Birth date cannot be in the future.";
+        return false;
+      }
+      return true;
+    }
     function cancelForm() {
       window.location.href = '/students';
     }
@@ -15,7 +51,7 @@
 <body class="bg-gray-50">
   <jsp:include page="header.jsp"/>
   <div class="max-w-3xl mx-auto mt-12 bg-white p-8 rounded-lg shadow-lg">
-  <form action="students" method="post" class="space-y-6">
+  <form action="students" method="post" class="space-y-6" onsubmit="return validateForm();">
     <h2 class="text-2xl font-semibold mb-4">Edit Student</h2>
     <input type="hidden" name="action" value="editStudent"/>
     <input type="hidden" name="studentId" value="${student.id}"/>
@@ -32,6 +68,11 @@
       <div>
         <label for="lastName" class="block text-sm font-medium text-gray-700">Last Name</label>
         <input type="text" id="lastName" name="lastName" class="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" value="${student.lastName}" required>
+      </div>
+      <div>
+        <label for="birthDate" class="block text-sm font-medium text-gray-700">Birth Date</label>
+        <input type="date" name="birthDate" id="birthDate" max="" class="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+         value="${student.birthDate}" required>
       </div>
     </div>
 

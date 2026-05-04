@@ -25,7 +25,11 @@ public class StudentService {
     }
     public void addStudent(HttpServletRequest request, HttpServletResponse response) throws IOException{
         Student student = new Student();
-        addStudentDetails(request, response, student);
+        student = addStudentDetails(request, response, student);
+        if (student==null){
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Student already exists.");
+            return;
+        }
         student.setStatus(Status.A);
         student.setBirthDate(Date.valueOf(request.getParameter("birthDate")));
         List<Course> courses = getCourses(request);
@@ -43,26 +47,27 @@ public class StudentService {
         return courses;
     }
 
-    public void addStudentDetails(HttpServletRequest request, HttpServletResponse response, Student student) throws IOException {
+    public Student addStudentDetails(HttpServletRequest request, HttpServletResponse response, Student student) throws IOException {
         String firstName = request.getParameter("firstName");
         String middleName = request.getParameter("middleName");
         String lastName = request.getParameter("lastName");
         String fullName = formatFullName(firstName, middleName, lastName);
         Student s = studentDAO.getStudentByName(fullName);
         if(s!=null){
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Student already exists.");
-            return;
+            return null;
         }
         student.setFirstName(firstName);
         student.setMiddleName(middleName);
         student.setLastName(lastName);
         student.setFullName(fullName);
+        return student;
     }
 
     public void editStudent(HttpServletRequest request, HttpServletResponse response) throws IOException{
         int id = Integer.parseInt(request.getParameter("studentId"));
         Student student = studentDAO.getStudentById(id);
         addStudentDetails(request, response, student);
+        student.setBirthDate(Date.valueOf(request.getParameter("birthDate")));
         studentDAO.updateStudent(student);
     }
 

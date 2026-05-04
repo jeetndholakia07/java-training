@@ -5,13 +5,16 @@
 <head>
     <title>Student Form</title>
     <script>
-        function validateForm(){
+            const today = new Date().toISOString().split("T")[0];
+            document.getElementById("birthDate").setAttribute("max", today);
+            function validateForm(){
             const nameRegex = /^[A-Za-z]+([ '-][A-Za-z]+)*$/
             const selectedCourses = document.querySelectorAll('input[name="courses"]:checked');
             const firstName = document.getElementById("firstName").value.trim();
             const middleName = document.getElementById("middleName").value.trim();
             const lastName = document.getElementById("lastName").value.trim();
             const errorBox = document.getElementById("errors");
+            const birthDate = document.getElementById("birthDate").value;
             errorBox.textContent = "";
             if(!nameRegex.test(firstName)){
                 errorBox.textContent = "Invalid first name.";
@@ -29,6 +32,11 @@
             }
             if(selectedCourses.length === 0){
                 errorBox.textContent = "Please select atleast any one course.";
+                return false;
+            }
+
+            if (birthDate > today) {
+                errorBox.textContent = "Birth date cannot be in the future.";
                 return false;
             }
             return true;
@@ -64,7 +72,7 @@
             </div>
             <div>
                 <label for="birthDate" class="block text-gray-700">Birth Date</label>
-                <input type="date" name="birthDate" id="birthDate" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                <input type="date" name="birthDate" id="birthDate" max="" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
             </div>
         </div>
 
