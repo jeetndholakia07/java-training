@@ -10,7 +10,7 @@
         <property name="hibernate.connection.password"></property>
         <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
         <property name="hibernate.hbm2ddl.auto">update</property>
-        <property name="hibernate.show_sql">true</property>
+        <property name="hibernate.show_sql">false</property>
         <mapping class="org.example.exercise1.models.Student"/>
         <mapping class="org.example.exercise1.models.Course"/>
     </session-factory>

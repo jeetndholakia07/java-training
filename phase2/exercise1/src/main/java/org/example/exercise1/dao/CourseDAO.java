@@ -10,5 +10,4 @@ public interface CourseDAO {
     public Course getCourseById(int id);
     public Course getCourseByName(String name);
     public List<Course> getCoursesById(List<Integer> ids);
-    public void updateCourse(Course course);
 }

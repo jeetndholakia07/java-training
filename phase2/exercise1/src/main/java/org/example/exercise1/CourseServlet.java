@@ -8,37 +8,35 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.example.exercise1.dao.CourseDAO;
 import org.example.exercise1.dao.CourseDAOImpl;
-import org.example.exercise1.dao.StudentDAO;
-import org.example.exercise1.dao.StudentDAOImpl;
-import org.example.exercise1.models.Student;
 import org.example.exercise1.services.CourseService;
+import org.example.exercise1.utils.Toast;
 
 import java.io.IOException;
-import java.util.List;
 
 @WebServlet("/course")
 public class CourseServlet extends HttpServlet {
+
     private static final String VIEW_PATH = "/WEB-INF/views";
+
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String view = VIEW_PATH + "/students.jsp";
         String action = req.getParameter("action");
-        if("addCourse".equals(action)){
-            CourseDAO courseDAO = new CourseDAOImpl();
-            CourseService courseService = new CourseService(courseDAO);
-            courseService.addCourse(req, resp);
+        CourseDAO courseDAO = new CourseDAOImpl();
+        CourseService courseService = new CourseService(courseDAO);
+        try {
+            if ("addCourse".equals(action)) {
+                courseService.addCourse(req);
+                Toast.setMessage(req, "success", "Course created successfully!");
+            }
+        } catch (Exception e) {
+            Toast.setMessage(req, "error", e.getMessage());
         }
-        StudentDAO studentDAO = new StudentDAOImpl();
-        List<Student> studentList = studentDAO.getAllStudents();
-        req.setAttribute("studentList", studentList);
-        RequestDispatcher requestDispatcher = req.getRequestDispatcher(view);
-        requestDispatcher.forward(req, resp);
+        resp.sendRedirect("course");
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String view = VIEW_PATH + "/course.jsp";
-        RequestDispatcher requestDispatcher = req.getRequestDispatcher(view);
-        requestDispatcher.forward(req, resp);
+        RequestDispatcher rd = req.getRequestDispatcher(VIEW_PATH + "/course.jsp");
+        rd.forward(req, resp);
     }
 }

@@ -47,6 +47,18 @@ public class StudentDAOImpl implements StudentDAO{
         return  studentList;
     }
 
+    public List getCoursesForStudent(int id){
+        try(Session session = DBConnection.getSessionFactory().openSession()){
+            return session.createQuery("select s.courses from Student s where s.id=(:id)")
+                    .setParameter("id", id)
+                    .getResultList();
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     @Override
     public List<Student> getStudentsById(List<Integer> ids) {
         try(Session session = DBConnection.getSessionFactory().openSession()){

@@ -1,5 +1,6 @@
 package com.example.exercise2.services;
 
+import com.example.exercise2.dto.InventoryOptionalRequest;
 import com.example.exercise2.dto.InventoryRequest;
 import com.example.exercise2.dto.InventoryResponse;
 import com.example.exercise2.dto.PaginatedResponse;
@@ -37,12 +38,21 @@ public class InventoryService {
         inventoryRepository.save(inventory);
     }
 
-    public void updateInventory(int id,InventoryRequest request){
+    public void updateInventory(int id, InventoryOptionalRequest request){
         Inventory inventory = inventoryRepository.findById(id)
                 .orElseThrow(()->new EntityNotFoundException("Inventory","Inventory not found."));
-        inventory.setDescription(request.getDescription());
-        inventory.setPrice(request.getPrice());
-        inventory.setAvailableUnits(request.getAvailableUnits());
+        if(request.getDescription()!=null){
+            if(request.getDescription().trim().isEmpty()){
+                throw new IllegalStateException("Description cannot be empty.");
+            }
+            inventory.setDescription(request.getDescription());
+        }
+        if(request.getAvailableUnits()!=null){
+            inventory.setAvailableUnits(request.getAvailableUnits());
+        }
+        if(request.getPrice()!=null){
+            inventory.setPrice(request.getPrice());
+        }
         inventoryRepository.save(inventory);
     }
 

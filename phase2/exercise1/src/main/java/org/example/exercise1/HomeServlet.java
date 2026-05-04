@@ -14,12 +14,12 @@ import java.io.IOException;
 @WebServlet("/")
 public class HomeServlet extends HttpServlet {
     private static final String VIEW_PATH = "/WEB-INF/views";
+    private final CourseDAO courseDAO = new CourseDAOImpl();
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        CourseDAO courseDAO = new CourseDAOImpl();
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
         req.setAttribute("courseList", courseDAO.getAllCourses());
-        String view = VIEW_PATH + "/index.jsp";
-        RequestDispatcher requestDispatcher = req.getRequestDispatcher(view);
-        requestDispatcher.forward(req, resp);
+        RequestDispatcher rd = req.getRequestDispatcher(VIEW_PATH + "/index.jsp");
+        rd.forward(req, resp);
     }
 }

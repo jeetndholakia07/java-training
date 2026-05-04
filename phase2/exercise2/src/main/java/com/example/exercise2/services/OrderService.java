@@ -110,18 +110,6 @@ public class OrderService {
         return mapOrderResponse(order, orderItems);
     }
 
-    public List<Inventory> getInventoryByIds(List<Integer> ids){
-        return inventoryRepository.findAllById(ids);
-    }
-
-    public void updateInventoryStock(List<Inventory> inventoryList){
-        inventoryRepository.saveAll(inventoryList);
-    }
-
-    public void saveOrderItems(List<OrderItem> orderItems){
-        orderItemRepository.saveAll(orderItems);
-    }
-
     public OrderItem mapOrderItem(Order order, Inventory inventory, OrderItemRequest item){
         OrderItem orderItem = new OrderItem();
 

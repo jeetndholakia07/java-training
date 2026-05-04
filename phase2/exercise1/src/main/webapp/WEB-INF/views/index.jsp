@@ -5,10 +5,8 @@
 <head>
     <title>Student Form</title>
     <script>
-            const today = new Date().toISOString().split("T")[0];
-            document.getElementById("birthDate").setAttribute("max", today);
             function validateForm(){
-            const nameRegex = /^[A-Za-z]+([ '-][A-Za-z]+)*$/
+            const nameRegex = /^[A-Za-z]+([ '-][A-Za-z]+)*$/;
             const selectedCourses = document.querySelectorAll('input[name="courses"]:checked');
             const firstName = document.getElementById("firstName").value.trim();
             const middleName = document.getElementById("middleName").value.trim();
@@ -30,13 +28,14 @@
                 errorBox.textContent = "Invalid last name.";
                 return false;
             }
-            if(selectedCourses.length === 0){
-                errorBox.textContent = "Please select atleast any one course.";
-                return false;
+
+            if (birthDate > new Date().toISOString().split("T")[0]) {
+                    errorBox.textContent = "Birth date cannot be in the future.";
+                    return false;
             }
 
-            if (birthDate > today) {
-                errorBox.textContent = "Birth date cannot be in the future.";
+            if(selectedCourses.length === 0){
+                errorBox.textContent = "Please select atleast any one course.";
                 return false;
             }
             return true;
@@ -50,7 +49,6 @@
 <body class="bg-gray-100">
 
 <jsp:include page="header.jsp"/>
-
 <div class="max-w-3xl mx-auto mt-12 bg-white p-8 rounded-lg shadow-lg">
     <h2 class="text-2xl font-semibold mb-4">Add Student</h2>
 
@@ -72,7 +70,7 @@
             </div>
             <div>
                 <label for="birthDate" class="block text-gray-700">Birth Date</label>
-                <input type="date" name="birthDate" id="birthDate" max="" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                <input type="date" name="birthDate" id="birthDate" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
             </div>
         </div>
 

@@ -12,7 +12,7 @@
   </script>
 </head>
 <body class="bg-gray-50">
-<div class="container mx-auto px-4 py-6">
+<div class="container">
   <jsp:include page="header.jsp"/>
 
   <div class="max-w-3xl mx-auto mt-12 bg-white p-8 rounded-lg shadow-lg">

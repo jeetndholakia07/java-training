@@ -1,5 +1,6 @@
 package org.example.exercise1.dao;
 
+import org.example.exercise1.models.Course;
 import org.example.exercise1.models.Student;
 
 import java.util.List;
@@ -12,4 +13,5 @@ public interface StudentDAO {
     public Student getStudentById(int id);
     public void updateStudent(Student student);
     public void deleteStudent(int id);
+    public List<Course> getCoursesForStudent(int id);
 }

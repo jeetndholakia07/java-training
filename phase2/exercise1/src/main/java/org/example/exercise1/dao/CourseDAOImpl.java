@@ -57,20 +57,4 @@ public class CourseDAOImpl implements CourseDAO{
                     .getResultList();
         }
     }
-
-    @Override
-    public void updateCourse(Course course) {
-        Transaction transaction = null;
-        try(Session session = DBConnection.getSessionFactory().openSession()){
-            transaction = session.beginTransaction();
-            session.merge(course);
-            transaction.commit();
-        }
-        catch (Exception e){
-            if(transaction!=null){
-                transaction.rollback();
-            }
-            e.printStackTrace();
-        }
-    }
 }

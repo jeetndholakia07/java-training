@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -7,10 +8,8 @@
   <title>Edit Student</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script>
-    const today = new Date().toISOString().split("T")[0];
-    document.getElementById("birthDate").setAttribute("max", today);
     function validateForm(){
-      const nameRegex = /^[A-Za-z]+([ '-][A-Za-z]+)*$/
+      const nameRegex = /^[A-Za-z]+([ '-][A-Za-z]+)*$/;
       const selectedCourses = document.querySelectorAll('input[name="courses"]:checked');
       const firstName = document.getElementById("firstName").value.trim();
       const middleName = document.getElementById("middleName").value.trim();
@@ -32,13 +31,19 @@
         errorBox.textContent = "Invalid last name.";
         return false;
       }
-      if(selectedCourses.length === 0){
-        errorBox.textContent = "Please select atleast any one course.";
+
+      if(!birthDate){
+        errorBox.textContent = "Birth date is required.";
         return false;
       }
 
-      if (birthDate > today) {
+      if (birthDate > new Date().toISOString().split("T")[0]) {
         errorBox.textContent = "Birth date cannot be in the future.";
+        return false;
+      }
+
+      if(selectedCourses.length === 0){
+        errorBox.textContent = "Please select atleast any one course.";
         return false;
       }
       return true;
@@ -51,7 +56,7 @@
 <body class="bg-gray-50">
   <jsp:include page="header.jsp"/>
   <div class="max-w-3xl mx-auto mt-12 bg-white p-8 rounded-lg shadow-lg">
-  <form action="students" method="post" class="space-y-6" onsubmit="return validateForm();">
+  <form action="students" method="post" class="space-y-6" onsubmit="return validateForm()">
     <h2 class="text-2xl font-semibold mb-4">Edit Student</h2>
     <input type="hidden" name="action" value="editStudent"/>
     <input type="hidden" name="studentId" value="${student.id}"/>
@@ -71,8 +76,46 @@
       </div>
       <div>
         <label for="birthDate" class="block text-sm font-medium text-gray-700">Birth Date</label>
-        <input type="date" name="birthDate" id="birthDate" max="" class="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-         value="${student.birthDate}" required>
+        <input type="date" name="birthDate" id="birthDate" class="mt-2 p-3 w-full border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+               value="<fmt:formatDate value='${student.birthDate}' pattern='yyyy-MM-dd'/>" required>
+      </div>
+      <div>
+        <label class="block text-gray-700">Courses</label>
+        <div class="space-y-2">
+
+          <c:if test="${not empty courseList}">
+            <c:forEach var="course" items="${courseList}">
+
+              <c:set var="isChecked" value="false"/>
+
+              <c:forEach var="sc" items="${studentCourses}">
+                <c:if test="${sc.id == course.id}">
+                  <c:set var="isChecked" value="true"/>
+                </c:if>
+              </c:forEach>
+
+              <div class="flex items-center">
+                <input type="checkbox"
+                       name="courses"
+                       value="${course.id}"
+                       class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                       <c:if test="${isChecked}">checked</c:if>
+                >
+                <label class="ml-2 text-gray-700">${course.courseName}</label>
+              </div>
+
+            </c:forEach>
+          </c:if>
+
+          <c:if test="${empty courseList}">
+            <p class="text-gray-500">No courses available.</p>
+          </c:if>
+
+        </div>
+      </div>
+      <div>
+        </div>
+      <div id="errors" class="text-red-500">
       </div>
     </div>
 

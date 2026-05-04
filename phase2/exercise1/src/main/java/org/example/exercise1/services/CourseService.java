@@ -14,19 +14,13 @@ public class CourseService {
         this.courseDAO = courseDAO;
     }
 
-    public void addCourse(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void addCourse(HttpServletRequest request) throws IOException {
         Course c = courseDAO.getCourseByName(request.getParameter("courseName"));
         if(c!=null){
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Course already exists.");
-            return;
+           throw new RuntimeException("Course already exists.");
         }
         Course course = new Course();
         course.setCourseName(request.getParameter("courseName"));
         courseDAO.createCourse(course);
-    }
-
-    public void editCourse(HttpServletRequest request){
-        Course course = courseDAO.getCourseById(Integer.parseInt(request.getParameter("id")));
-        courseDAO.updateCourse(course);
     }
 }

@@ -1,5 +1,6 @@
 package com.example.exercise2.controllers;
 
+import com.example.exercise2.dto.InventoryOptionalRequest;
 import com.example.exercise2.dto.InventoryRequest;
 import com.example.exercise2.dto.InventoryResponse;
 import com.example.exercise2.dto.PaginatedResponse;
@@ -41,7 +42,7 @@ public class InventoryController {
         return ResponseEntity.ok().body(inventoryService.getInventoryById(id));
     }
     @PatchMapping("/{id}")
-    public ResponseEntity<Map<String, String>> editInventory(@PathVariable int id, @RequestBody @Valid InventoryRequest request){
+    public ResponseEntity<Map<String, String>> editInventory(@PathVariable int id, @RequestBody @Valid InventoryOptionalRequest request){
         Map<String,String> response = new HashMap<>();
         inventoryService.updateInventory(id,request);
         response.put("message","Inventory updated successfully");

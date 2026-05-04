@@ -5,9 +5,24 @@
 <head>
   <title>Students List</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      setTimeout(() => {
+        const toast = document.getElementById("toast");
+        if (toast) toast.remove();
+      }, 3000);
+    });
+    function confirmDelete(event){
+      const isConfirm = confirm("Are you sure you want to delete?");
+      if(!isConfirm){
+        event.preventDefault();
+        return false;
+      }
+      return true;
+    }
+  </script>
 </head>
 <body class="bg-gray-100">
-
 <jsp:include page="header.jsp"/>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
@@ -43,7 +58,7 @@
               <input type="hidden" name="studentId" value="${s.id}"/>
               <button class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700" name="action" value="editStudent">Edit</button>
             </a>
-            <form action="students" method="post" style="display:inline;">
+            <form action="students" method="post" style="display:inline;" onsubmit="return confirmDelete(event)">
               <input type="hidden" name="studentId" value="${s.id}"/>
               <button class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700" name="action" value="deleteStudent">Delete</button>
             </form>
