@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: discovery-server
+
+server:
+  port: ${EUREKA_PORT}
+
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL}
