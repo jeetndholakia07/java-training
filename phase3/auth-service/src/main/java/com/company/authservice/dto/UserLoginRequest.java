@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 
 public class UserLoginRequest {
     @NotNull(message = "Email is required.")
-    @Email(message = "Please enter valid email.")
+    @NotBlank(message = "Email cannot be blank.")
     private String email;
     @NotNull(message = "Password is required.")
     @NotBlank(message = "Password cannot be blank.")

@@ -19,8 +19,6 @@ public class Role {
     @Enumerated(value = EnumType.STRING)
     @Column(name = "role_name",columnDefinition = "CHAR(1)")
     private RoleEnum roleName;
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User createdBy;
     @CreationTimestamp(source = SourceType.DB)
     @Column(name = "creation_timestamp")
     private Timestamp creationTimestamp;
@@ -31,11 +29,10 @@ public class Role {
     public Role() {
     }
 
-    public Role(int roleId, String guid, RoleEnum roleName, User createdBy, Timestamp creationTimestamp, Timestamp lastUpdatedTimestamp) {
+    public Role(int roleId, String guid, RoleEnum roleName, Timestamp creationTimestamp, Timestamp lastUpdatedTimestamp) {
         this.roleId = roleId;
         this.guid = guid;
         this.roleName = roleName;
-        this.createdBy = createdBy;
         this.creationTimestamp = creationTimestamp;
         this.lastUpdatedTimestamp = lastUpdatedTimestamp;
     }
@@ -62,14 +59,6 @@ public class Role {
 
     public void setRoleName(RoleEnum roleName) {
         this.roleName = roleName;
-    }
-
-    public User getCreatedBy() {
-        return createdBy;
-    }
-
-    public void setCreatedBy(User createdBy) {
-        this.createdBy = createdBy;
     }
 
     public Timestamp getCreationTimestamp() {

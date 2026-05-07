@@ -11,6 +11,9 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http){
         http
         .csrf(csrf->csrf.disable())
+        .formLogin(form->form.disable())
+        .httpBasic(basic->basic.disable())
+        .logout(logout->logout.disable())
         .authorizeHttpRequests(auth->auth.anyRequest().permitAll()
          );
         return http.build();

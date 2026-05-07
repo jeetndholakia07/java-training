@@ -10,22 +10,15 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class RoleService {
-    private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final AuthService authService;
     public RoleService(UserRepository userRepository, RoleRepository roleRepository, AuthService authService){
-        this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.authService = authService;
     }
     public void createRole(RoleRequest request){
-        User user = userRepository.getUserByGuid(request.getUserGuid());
-        if(user==null){
-            throw new EntityNotFoundException("User", "Unauthorized Access.");
-        }
         Role role = new Role();
         role.setGuid(authService.generateUUID());
-        role.setCreatedBy(user);
         role.setRoleName(request.getRole());
         roleRepository.save(role);
     }

@@ -1,0 +1,81 @@
+package com.company.productservice.controller;
+
+import com.company.productservice.dto.CreateProductRequest;
+import com.company.productservice.dto.PaginatedResponse;
+import com.company.productservice.dto.ProductResponse;
+import com.company.productservice.dto.UpdateProductRequest;
+import com.company.productservice.service.GuidService;
+import com.company.productservice.service.ProductService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/v1/products")
+public class ProductController {
+    private final ProductService productService;
+    private final GuidService guidService;
+    public ProductController(ProductService productService, GuidService guidService){
+        this.productService = productService;
+        this.guidService = guidService;
+    }
+    @PostMapping("/")
+    public ResponseEntity<Map<String,String>> createProduct(@RequestBody @Valid CreateProductRequest request,
+        @RequestHeader("X-ID") String userGuid){
+        if(userGuid==null || !guidService.verifyUUID(userGuid)){
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        Map<String,String> response = new HashMap<>();
+        productService.createProduct(request,userGuid);
+        response.put("message","Product created successfully.");
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+    @GetMapping("/{guid}")
+    public ResponseEntity<ProductResponse> getProductByGuid(@PathVariable String guid){
+        if(!guidService.verifyUUID(guid)){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>(productService.getProductByGuid(guid), HttpStatus.OK);
+    }
+    @GetMapping("")
+    public ResponseEntity<PaginatedResponse<ProductResponse>> getAllProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String search
+    ){
+        return new ResponseEntity<>(productService.getPaginatedProducts(page,size,search),HttpStatus.OK);
+    }
+    @PatchMapping("/{guid}")
+    public ResponseEntity<Map<String,String>> editProduct(@PathVariable String guid,
+        @RequestBody @Valid UpdateProductRequest request,
+        @RequestHeader("X-ID") String userGuid){
+        if(userGuid==null || !guidService.verifyUUID(userGuid)){
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        if(!guidService.verifyUUID(guid)){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        Map<String,String> response = new HashMap<>();
+        productService.updateProduct(guid, request, userGuid);
+        response.put("message","Product updated successfully.");
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @DeleteMapping("/{guid}")
+    public ResponseEntity<Map<String,String>> deactivateProduct(@PathVariable String guid,
+        @RequestHeader("X-ID") String userGuid){
+        if(userGuid==null || !guidService.verifyUUID(userGuid)){
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        if(!guidService.verifyUUID(guid)){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        Map<String,String> response = new HashMap<>();
+        productService.deactivateProduct(guid, userGuid);
+        response.put("message","Product deactivated successfully.");
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+}
