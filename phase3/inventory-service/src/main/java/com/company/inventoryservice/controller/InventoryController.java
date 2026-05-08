@@ -1,13 +1,15 @@
 package com.company.inventoryservice.controller;
 
-import com.company.inventoryservice.dto.CreateInventoryRequest;
+import com.company.inventoryservice.dto.*;
 import com.company.inventoryservice.service.GuidService;
 import com.company.inventoryservice.service.InventoryService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -20,8 +22,8 @@ public class InventoryController {
         this.guidService = guidService;
     }
     @PostMapping("/")
-    public ResponseEntity<Map<String,String>> createInventory(@RequestBody CreateInventoryRequest request
-    , @RequestHeader("X-ID") String userGuid){
+    public ResponseEntity<Map<String,String>> createInventory(@RequestBody CreateInventoryRequest request,
+        @RequestHeader("X-ID") String userGuid){
         if(userGuid==null || !guidService.verifyUUID(userGuid)){
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
@@ -39,6 +41,24 @@ public class InventoryController {
         Map<String,String> response = new HashMap<>();
         inventoryService.addInventoryStock(guid, units, userGuid);
         response.put("message","Inventory updated successfully.");
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @GetMapping("/{guid}")
+    public ResponseEntity<InventoryResponse> getInventoryByGuid(@PathVariable String productGuid){
+        if(productGuid==null || !guidService.verifyUUID(productGuid)){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>(inventoryService.getInventoryByGuid(productGuid), HttpStatus.OK);
+    }
+    @PostMapping("/check")
+    public ResponseEntity<InventoryCheckResponse> checkItemsAvailability(@RequestBody @Valid InventoryCheckRequest request){
+        return new ResponseEntity<>(inventoryService.checkAvailability(request),HttpStatus.OK);
+    }
+    @PostMapping("/update-stock")
+    public ResponseEntity<Map<String,String>> updateItemStock(@RequestBody @Valid InventoryDeductRequest request){
+        inventoryService.updateItemAvailability(request);
+        Map<String,String> response = new HashMap<>();
+        response.put("message","Inventory stock updated successfully.");
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     @PatchMapping("/{guid}")

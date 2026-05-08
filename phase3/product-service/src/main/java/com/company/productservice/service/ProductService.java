@@ -14,8 +14,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
@@ -39,6 +39,7 @@ public class ProductService {
         product.setLastUpdatedBy(userGuid);
         productRepository.save(product);
     }
+
     public PaginatedResponse<ProductResponse> getPaginatedProducts(int page, int size, String search){
         Pageable pageable = PageRequest.of(page,size);
         Page<Product> productPage;
@@ -60,12 +61,36 @@ public class ProductService {
                 productPage.getTotalPages()
         );
     }
+
     public ProductResponse getProductByGuid(String guid){
         Product product = productRepository.findProductByGuid(guid);
         if(product==null){
             throw new EntityNotFoundException("Product","Product not found.");
         }
         return mapToResponse(product);
+    }
+
+    public Map<String, Object> getProductsByGuids(List<String> guids){
+        Map<String, Object> result = new HashMap<>();
+        if(guids==null || guids.isEmpty()){
+            result.put("products",Collections.emptyList());
+            result.put("missingGuids",Collections.emptyList());
+            return result;
+        }
+        Set<String> uniqueGuids = new HashSet<>(guids);
+        List<Product> products = productRepository.findByGuidIn(uniqueGuids);
+        List<ProductResponse> productResponses = products.stream()
+                .map(this::mapToResponse)
+                .toList();
+        Set<String> foundGuids = products.stream()
+                .map(Product::getGuid)
+                .collect(Collectors.toSet());
+        List<String> missingGuids = uniqueGuids.stream()
+                .filter(g->!foundGuids.contains(g))
+                .toList();
+        result.put("products", productResponses);
+        result.put("missingGuids",missingGuids);
+        return result;
     }
 
     public void updateProduct(String guid, UpdateProductRequest request, String userGuid){

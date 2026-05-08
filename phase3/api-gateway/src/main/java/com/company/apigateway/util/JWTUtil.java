@@ -15,9 +15,15 @@ public class JWTUtil {
     public JWTUtil() throws Exception{
         this.publicKey = loadPublicKey(System.getenv("JWT_PUBLIC_KEY"));
     }
-    private PublicKey loadPublicKey(String base64) throws Exception {
 
-        String sanitized = base64
+    private PublicKey loadPublicKey(String envValue) throws Exception {
+        String pem = new String(
+                Base64.getDecoder().decode(envValue)
+        );
+
+        String sanitized = pem
+                .replace("-----BEGIN PUBLIC KEY-----", "")
+                .replace("-----END PUBLIC KEY-----", "")
                 .replaceAll("\\s+", "");
 
         byte[] keyBytes = Base64.getDecoder().decode(sanitized);
@@ -25,8 +31,7 @@ public class JWTUtil {
         X509EncodedKeySpec spec =
                 new X509EncodedKeySpec(keyBytes);
 
-        return KeyFactory.getInstance("RSA")
-                .generatePublic(spec);
+        return KeyFactory.getInstance("RSA").generatePublic(spec);
     }
 
     public boolean validateToken(String token){

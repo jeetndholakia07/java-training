@@ -30,9 +30,14 @@ public class JwtService {
                 .compact();
     }
 
-    private PrivateKey loadPrivateKey(String base64) throws Exception {
+    private PrivateKey loadPrivateKey(String envValue) throws Exception {
+        String pem = new String(
+                Base64.getDecoder().decode(envValue)
+        );
 
-        String sanitized = base64
+        String sanitized = pem
+                .replace("-----BEGIN PRIVATE KEY-----", "")
+                .replace("-----END PRIVATE KEY-----", "")
                 .replaceAll("\\s+", "");
 
         byte[] keyBytes = Base64.getDecoder().decode(sanitized);
@@ -40,7 +45,6 @@ public class JwtService {
         PKCS8EncodedKeySpec spec =
                 new PKCS8EncodedKeySpec(keyBytes);
 
-        return KeyFactory.getInstance("RSA")
-                .generatePrivate(spec);
+        return KeyFactory.getInstance("RSA").generatePrivate(spec);
     }
 }
