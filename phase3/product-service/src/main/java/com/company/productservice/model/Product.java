@@ -14,7 +14,7 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "product_id")
-    private String productId;
+    private int productId;
     private String guid;
     @Column(name = "product_name")
     private String productName;
@@ -37,11 +37,11 @@ public class Product {
     public Product() {
     }
 
-    public String getProductId() {
+    public int getProductId() {
         return productId;
     }
 
-    public void setProductId(String productId) {
+    public void setProductId(int productId) {
         this.productId = productId;
     }
 

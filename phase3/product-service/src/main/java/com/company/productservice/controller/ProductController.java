@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -40,6 +41,10 @@ public class ProductController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         return new ResponseEntity<>(productService.getProductByGuid(guid), HttpStatus.OK);
+    }
+    @PostMapping("/list")
+    public ResponseEntity<Map<String,Object>> getProductsByGuids(@RequestBody List<String> guids){
+        return new ResponseEntity<>(productService.getProductsByGuids(guids),HttpStatus.OK);
     }
     @GetMapping("")
     public ResponseEntity<PaginatedResponse<ProductResponse>> getAllProducts(
