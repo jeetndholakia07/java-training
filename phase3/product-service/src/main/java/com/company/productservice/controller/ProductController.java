@@ -9,6 +9,7 @@ import com.company.productservice.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -25,6 +26,7 @@ public class ProductController {
         this.guidService = guidService;
     }
     @PostMapping("/")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String,String>> createProduct(@RequestBody @Valid CreateProductRequest request,
         @RequestHeader("X-ID") String userGuid){
         if(userGuid==null || !guidService.verifyUUID(userGuid)){
@@ -35,7 +37,9 @@ public class ProductController {
         response.put("message","Product created successfully.");
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
     @GetMapping("/{guid}")
+    @PreAuthorize("hasAnyRole('ADMIN','CUSTOMER')")
     public ResponseEntity<ProductResponse> getProductByGuid(@PathVariable String guid){
         if(!guidService.verifyUUID(guid)){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -43,10 +47,12 @@ public class ProductController {
         return new ResponseEntity<>(productService.getProductByGuid(guid), HttpStatus.OK);
     }
     @PostMapping("/list")
+    @PreAuthorize("hasAnyRole('ADMIN','CUSTOMER')")
     public ResponseEntity<Map<String,Object>> getProductsByGuids(@RequestBody List<String> guids){
         return new ResponseEntity<>(productService.getProductsByGuids(guids),HttpStatus.OK);
     }
     @GetMapping("")
+    @PreAuthorize("hasAnyRole('ADMIN','CUSTOMER')")
     public ResponseEntity<PaginatedResponse<ProductResponse>> getAllProducts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size,
@@ -55,6 +61,7 @@ public class ProductController {
         return new ResponseEntity<>(productService.getPaginatedProducts(page,size,search),HttpStatus.OK);
     }
     @PatchMapping("/{guid}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String,String>> editProduct(@PathVariable String guid,
         @RequestBody @Valid UpdateProductRequest request,
         @RequestHeader("X-ID") String userGuid){
@@ -69,6 +76,7 @@ public class ProductController {
         response.put("message","Product updated successfully.");
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{guid}")
     public ResponseEntity<Map<String,String>> deactivateProduct(@PathVariable String guid,
         @RequestHeader("X-ID") String userGuid){

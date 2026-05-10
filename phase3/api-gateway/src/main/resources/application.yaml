@@ -10,6 +10,24 @@ spring:
             - Path=/auth-service/**
           filters:
             - StripPrefix=1
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+              - Path=/product-service/**
+          filters:
+                - StripPrefix=1
+        - id: inventory-service
+          uri: lb://inventory-service
+          predicates:
+              - Path=/inventory-service/**
+          filters:
+            - StripPrefix=1
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+              - Path=/order-service/**
+          filters:
+            - StripPrefix=1
 server:
   port: ${GATEWAY_SERVER_PORT}
 
@@ -21,12 +39,3 @@ eureka:
       defaultZone: ${EUREKA_SERVER_URL}
   instance:
     prefer-ip-address: true
-
-security:
-  public-routes:
-    - /v1/auth/register
-    - /v1/auth/login
-
-  protected-routes:
-    - path: /v1/roles/**
-      role: A

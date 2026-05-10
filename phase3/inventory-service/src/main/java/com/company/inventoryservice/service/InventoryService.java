@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -67,62 +68,65 @@ public class InventoryService {
         inventory.setLastUpdatedBy(userGuid);
         inventoryRepository.save(inventory);
     }
-    public InventoryCheckResponse checkAvailability(InventoryCheckRequest request){
-        Set<String> productGuids = request.items().keySet();
-        List<Inventory> inventories = inventoryRepository.findByProductGuidAndStatusIn(
-                productGuids, Collections.singleton(StatusEnum.A)
-        );
-        Map<String,Inventory> inventoryMap = inventories.stream()
-                .collect(Collectors.toMap(Inventory::getProductGuid, inv->inv));
-        Map<String, Boolean> availability = request.items().entrySet()
+
+    @Transactional
+    public InventoryCheckResponse checkoutInventory(InventoryCheckRequest request){
+        List<String> productGuids = request.getItems()
                 .stream()
+                .map(InventoryCheckItemRequest::getProductGuid)
+                .toList();
+        List<Inventory> inventories = inventoryRepository.lockInventories(productGuids, Collections.singleton(StatusEnum.A));
+        Map<String, Inventory> inventoryMap = inventories.stream()
                 .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e->{
-                            Inventory inv = inventoryMap.get(e.getKey());
-                            return inv!=null && inv.getAvailableUnits()>=e.getValue();
-                        }
+                        Inventory::getProductGuid,
+                        inv->inv
                 ));
-        Set<String> missingProducts = productGuids.stream()
-                .filter(guid->!inventoryMap.containsKey(guid))
-                .collect(Collectors.toSet());
-        return new InventoryCheckResponse(availability,missingProducts);
-    }
-    public void updateItemAvailability(InventoryDeductRequest request){
-        if(request==null || request.items().isEmpty()){
-            throw new IllegalArgumentException("Invalid product items");
+        boolean checkoutAllowed = true;
+        List<InventoryAvailability> responses = new ArrayList<>();
+        for(InventoryCheckItemRequest item : request.getItems()){
+            Inventory inventory = inventoryMap.get(item.getProductGuid());
+            if(inventory==null){
+                checkoutAllowed = false;
+                responses.add(
+                        new InventoryAvailability(
+                                item.getProductGuid(),
+                                false,
+                                item.getRequestedQty(),
+                                0,
+                                "Inventory not found"
+                        )
+                );
+                continue;
+            }
+            boolean available = inventory.getAvailableUnits()>=item.getRequestedQty();
+            if(!available){
+                checkoutAllowed = false;
+            }
+            responses.add(new InventoryAvailability(
+                    item.getProductGuid(),
+                    available,
+                    item.getRequestedQty(),
+                    inventory.getAvailableUnits(),
+                    available ? "Available" : "Insufficient stock"
+            ));
         }
-        List<Inventory> inventories = inventoryRepository.findByProductGuidAndStatusIn(
-                request.items().keySet(), Collections.singleton(StatusEnum.A)
-        );
-        Map<String,Inventory> inventoryMap = inventories.stream()
-                .collect(Collectors.toMap(Inventory::getProductGuid,inv->inv));
-        for(Map.Entry<String,Integer> entry: request.items().entrySet()){
-            String productGuid = entry.getKey();
-            int qtyRequested = entry.getValue();
-            Inventory inv = inventoryMap.get(productGuid);
-            if (inv == null) {
-                throw new RuntimeException("Inventory not found for product: " + productGuid);
-            }
-            if (inv.getAvailableUnits() < qtyRequested) {
-                throw new RuntimeException("Insufficient inventory for product: " + productGuid);
-            }
-            inv.setAvailableUnits(inv.getAvailableUnits() - qtyRequested);
+        if(!checkoutAllowed){
+            return new InventoryCheckResponse(
+                    false,
+                    responses
+            );
+        }
+        for(InventoryCheckItemRequest item: request.getItems()){
+            Inventory inventory = inventoryMap.get(item.getProductGuid());
+            inventory.setAvailableUnits(inventory.getAvailableUnits()- item.getRequestedQty());
         }
         inventoryRepository.saveAll(inventories);
+        return new InventoryCheckResponse(
+                checkoutAllowed,
+                responses
+        );
     }
-    public void updateInventoryInactive(String inventoryGuid, String userGuid){
-        if(!guidService.verifyUUID(inventoryGuid)){
-            throw new IllegalArgumentException("Invalid inventory guid");
-        }
-        Inventory inventory = inventoryRepository.findInventoryByProductGuid(inventoryGuid);
-        if(inventory==null){
-            throw new EntityNotFoundException("Inventory","Inventory not found");
-        }
-        inventory.setStatus(StatusEnum.I);
-        inventory.setLastUpdatedBy(userGuid);
-        inventoryRepository.save(inventory);
-    }
+
     public void deactivateInventory(String inventoryGuid, String userGuid){
         if(!guidService.verifyUUID(inventoryGuid)){
             throw new IllegalArgumentException("Invalid inventory guid");

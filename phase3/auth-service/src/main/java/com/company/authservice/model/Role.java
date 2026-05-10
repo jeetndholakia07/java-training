@@ -17,7 +17,7 @@ public class Role {
     private int roleId;
     private String guid;
     @Enumerated(value = EnumType.STRING)
-    @Column(name = "role_name",columnDefinition = "CHAR(1)")
+    @Column(name = "role_name")
     private RoleEnum roleName;
     @CreationTimestamp(source = SourceType.DB)
     @Column(name = "creation_timestamp")

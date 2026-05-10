@@ -1,11 +1,11 @@
 package com.company.orderservice.model;
 
-import com.company.orderservice.utils.StatusEnum;
+import com.company.orderservice.utils.OrderStatus;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.SourceType;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -24,7 +24,7 @@ public class Order {
     private int totalItems;
     @Enumerated(value = EnumType.STRING)
     @Column(name = "order_status")
-    private StatusEnum orderStatus;
+    private OrderStatus orderStatus;
     @Column(name = "user_guid")
     private String userGuid;
     @CreationTimestamp(source = SourceType.DB)
@@ -83,11 +83,11 @@ public class Order {
         this.totalItems = totalItems;
     }
 
-    public StatusEnum getOrderStatus() {
+    public OrderStatus getOrderStatus() {
         return orderStatus;
     }
 
-    public void setOrderStatus(StatusEnum orderStatus) {
+    public void setOrderStatus(OrderStatus orderStatus) {
         this.orderStatus = orderStatus;
     }
 

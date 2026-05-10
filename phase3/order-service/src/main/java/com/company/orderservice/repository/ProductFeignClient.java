@@ -11,5 +11,5 @@ import java.util.List;
 @FeignClient(value = "product-service")
 public interface ProductFeignClient {
     @PostMapping("/v1/products/list")
-    public ResponseEntity<ProductListResponse> getProductsByGuids(@RequestBody List<String> guids);
+    ResponseEntity<ProductListResponse> getProductsByGuids(@RequestBody List<String> guids);
 }

@@ -1,6 +1,6 @@
 package com.company.orderservice.utils;
 
-public enum StatusEnum {
+public enum OrderStatus {
     P,
     C,
     D

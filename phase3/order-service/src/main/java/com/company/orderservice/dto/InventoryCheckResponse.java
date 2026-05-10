@@ -1,7 +1,24 @@
 package com.company.orderservice.dto;
 
-import java.util.Map;
-import java.util.Set;
+import java.util.List;
 
-public record InventoryCheckResponse(Map<String, Boolean> availability, Set<String> missingProducts) {
+public class InventoryCheckResponse {
+    private boolean checkoutAllowed;
+    private List<InventoryAvailability> items;
+
+    public boolean isCheckoutAllowed() {
+        return checkoutAllowed;
+    }
+
+    public void setCheckoutAllowed(boolean checkoutAllowed) {
+        this.checkoutAllowed = checkoutAllowed;
+    }
+
+    public List<InventoryAvailability> getItems() {
+        return items;
+    }
+
+    public void setItems(List<InventoryAvailability> items) {
+        this.items = items;
+    }
 }

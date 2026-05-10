@@ -2,6 +2,7 @@ package com.company.apigateway.config;
 
 import com.company.apigateway.util.JWTUtil;
 import io.jsonwebtoken.Claims;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.http.HttpHeaders;
@@ -11,85 +12,122 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @Component
 public class JWTFilter implements GlobalFilter {
     private final JWTUtil jwtUtil;
-    private final RouteProperties routeProperties;
-    public JWTFilter(JWTUtil jwtUtil, RouteProperties routeProperties){
+
+    @Value("${GATEWAY_SECRET}")
+    private String gatewaySecret;
+
+    private static final List<String> PUBLIC_ROUTES = List.of(
+            "/v1/auth/login",
+            "/v1/auth/register"
+    );
+
+    public JWTFilter(JWTUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
-        this.routeProperties = routeProperties;
     }
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-       String path = exchange.getRequest().getPath().toString();
-        final String gatewayCode = System.getenv("GATEWAY_SECRET");
-       if(isPublic(path)){
-           ServerHttpRequest mutatedRequest = exchange.getRequest()
-                   .mutate()
-                   .headers(httpHeaders ->
-                           httpHeaders.add("X-Gateway-Secret",gatewayCode))
-                   .build();
-           return chain.filter(exchange.mutate()
-                   .request(mutatedRequest)
-                   .build());
-       }
-       String authHeader = exchange.getRequest()
-               .getHeaders()
-               .getFirst(HttpHeaders.AUTHORIZATION);
-       if(authHeader==null || !authHeader.startsWith("Bearer ")){
-           return unauthorized(exchange);
-       }
-       String token = authHeader.substring(7);
-       if(!jwtUtil.validateToken(token)){
-           return unauthorized(exchange);
-       }
-        Claims claims = jwtUtil.extractClaims(token);
-        String role = claims.get("role", String.class);
-        String username = claims.get("username", String.class);
-        String guid = claims.get("userGuid", String.class);
-        if(!hasAccess(path,role)){
-            return forbidden(exchange);
-        }
-        ServerHttpRequest mutatedRequest = exchange.getRequest()
-                .mutate()
-                .headers(headers -> {
-                    headers.remove("X-User");
-                    headers.remove("X-ID");
-                    headers.remove("X-Role");
-                    headers.remove("X-Gateway-Secret");
+    public Mono<Void> filter(
+            ServerWebExchange exchange,
+            GatewayFilterChain chain
+    ) {
 
-                    headers.add("X-User", username);
-                    headers.add("X-ID", guid);
-                    headers.add("X-Role", role);
-                    headers.add("X-Gateway-Secret", gatewayCode);
-                })
-                .build();
-        return chain.filter(exchange.mutate()
-                .request(mutatedRequest)
-                .build()
+        String path = exchange.getRequest()
+                .getURI()
+                .getPath();
+
+        if (isPublicRoute(path)) {
+            return chain.filter(
+                    addGatewayHeader(exchange)
+            );
+        }
+
+        String authHeader = exchange.getRequest()
+                .getHeaders()
+                .getFirst(HttpHeaders.AUTHORIZATION);
+
+        if (authHeader == null ||
+                !authHeader.startsWith("Bearer ")) {
+
+            return unauthorized(exchange);
+        }
+
+        String token = authHeader.substring(7);
+
+        if (!jwtUtil.validateToken(token)) {
+
+            return unauthorized(exchange);
+        }
+
+        Claims claims = jwtUtil.extractClaims(token);
+
+        return chain.filter(
+                addUserHeaders(
+                        exchange,
+                        claims.get("username", String.class),
+                        claims.get("userGuid", String.class),
+                        claims.get("role", String.class)
+                )
         );
     }
 
-    private boolean isPublic(String path){
-        return routeProperties.getPublicRoutes().stream()
+    private boolean isPublicRoute(String path) {
+        return PUBLIC_ROUTES.stream()
                 .anyMatch(path::startsWith);
     }
 
-    private boolean hasAccess(String path, String role){
-        if(routeProperties.getRoleRoutes()==null){
-            return true;
-        }
-        return routeProperties.getRoleRoutes().stream().anyMatch(route->
-                path.startsWith(route.getPath()) && role.equals(route.getRole()));
+    private ServerWebExchange addGatewayHeader(
+            ServerWebExchange exchange
+    ) {
+        ServerHttpRequest request = exchange.getRequest()
+                .mutate()
+                .headers(headers ->
+                        headers.set(
+                                "X-Gateway-Secret",
+                                gatewaySecret
+                        )
+                )
+                .build();
+
+        return exchange.mutate()
+                .request(request)
+                .build();
     }
 
-    private Mono<Void> unauthorized(ServerWebExchange exchange){
-        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-        return exchange.getResponse().setComplete();
+    private ServerWebExchange addUserHeaders(
+            ServerWebExchange exchange,
+            String username,
+            String userGuid,
+            String role
+    ) {
+        ServerHttpRequest request = exchange.getRequest()
+                .mutate()
+                .headers(headers -> {
+
+                    headers.set("X-User", username);
+                    headers.set("X-ID", userGuid);
+                    headers.set("X-Role", role);
+                    headers.set("X-Gateway-Secret", gatewaySecret);
+                })
+                .build();
+
+        return exchange.mutate()
+                .request(request)
+                .build();
     }
-    private Mono<Void> forbidden(ServerWebExchange exchange){
-        exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-        return exchange.getResponse().setComplete();
+
+    private Mono<Void> unauthorized(
+            ServerWebExchange exchange
+    ) {
+
+        exchange.getResponse()
+                .setStatusCode(HttpStatus.UNAUTHORIZED);
+
+        return exchange.getResponse()
+                .setComplete();
     }
 }

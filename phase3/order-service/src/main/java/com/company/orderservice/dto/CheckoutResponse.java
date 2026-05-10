@@ -1,18 +1,16 @@
 package com.company.orderservice.dto;
 
-import com.company.orderservice.utils.StatusEnum;
+import com.company.orderservice.utils.OrderStatus;
 
 import java.util.List;
 
 public class CheckoutResponse {
     private String orderGuid;
-    private int totalItems;
-    private StatusEnum orderStatus;
     private Double totalPrice;
-    private List<OrderItemResponse> orderItems;
-
-    public CheckoutResponse() {
-    }
+    private int totalItems;
+    private OrderStatus status;
+    private List<OrderItemResponse> items;
+    private String message;
 
     public String getOrderGuid() {
         return orderGuid;
@@ -20,22 +18,6 @@ public class CheckoutResponse {
 
     public void setOrderGuid(String orderGuid) {
         this.orderGuid = orderGuid;
-    }
-
-    public int getTotalItems() {
-        return totalItems;
-    }
-
-    public void setTotalItems(int totalItems) {
-        this.totalItems = totalItems;
-    }
-
-    public StatusEnum getOrderStatus() {
-        return orderStatus;
-    }
-
-    public void setOrderStatus(StatusEnum orderStatus) {
-        this.orderStatus = orderStatus;
     }
 
     public Double getTotalPrice() {
@@ -46,11 +28,35 @@ public class CheckoutResponse {
         this.totalPrice = totalPrice;
     }
 
-    public List<OrderItemResponse> getOrderItems() {
-        return orderItems;
+    public int getTotalItems() {
+        return totalItems;
     }
 
-    public void setOrderItems(List<OrderItemResponse> orderItems) {
-        this.orderItems = orderItems;
+    public void setTotalItems(int totalItems) {
+        this.totalItems = totalItems;
+    }
+
+    public OrderStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(OrderStatus status) {
+        this.status = status;
+    }
+
+    public List<OrderItemResponse> getItems() {
+        return items;
+    }
+
+    public void setItems(List<OrderItemResponse> items) {
+        this.items = items;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }

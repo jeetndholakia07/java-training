@@ -5,6 +5,7 @@ import com.company.authservice.service.RoleService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +22,7 @@ public class RoleController {
         this.roleService = roleService;
     }
     @PostMapping("/")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String,String>> createRole(@RequestBody @Valid RoleRequest request){
         Map<String,String> response = new HashMap<>();
         roleService.createRole(request);

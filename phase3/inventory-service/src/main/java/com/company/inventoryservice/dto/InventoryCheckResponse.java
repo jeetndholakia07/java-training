@@ -1,7 +1,9 @@
 package com.company.inventoryservice.dto;
 
-import java.util.Map;
-import java.util.Set;
+import java.util.List;
 
-public record InventoryCheckResponse(Map<String, Boolean> availability, Set<String> missingProducts) {
+public record InventoryCheckResponse(
+        boolean checkoutAllowed,
+        List<InventoryAvailability> items
+) {
 }

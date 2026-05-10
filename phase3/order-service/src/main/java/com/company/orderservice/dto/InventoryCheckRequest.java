@@ -1,6 +1,14 @@
 package com.company.orderservice.dto;
+import java.util.List;
 
-import java.util.Map;
+public class InventoryCheckRequest{
+    List<InventoryCheckItemRequest> items;
 
-public record InventoryCheckRequest(Map<String, Integer> items) {
+    public List<InventoryCheckItemRequest> getItems() {
+        return items;
+    }
+
+    public void setItems(List<InventoryCheckItemRequest> items) {
+        this.items = items;
+    }
 }

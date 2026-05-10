@@ -1,4 +1,4 @@
-package com.company.authservice.config;
+package com.company.orderservice.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

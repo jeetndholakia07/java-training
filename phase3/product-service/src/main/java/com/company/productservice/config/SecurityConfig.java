@@ -1,4 +1,4 @@
-package com.company.authservice.config;
+package com.company.productservice.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

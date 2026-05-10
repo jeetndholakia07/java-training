@@ -1,6 +1,18 @@
 package com.company.inventoryservice.dto;
 
-import java.util.Map;
+import jakarta.validation.constraints.NotBlank;
 
-public record InventoryCheckRequest(Map<String, Integer> items) {
+import java.util.List;
+
+public class InventoryCheckRequest {
+    @NotBlank(message = "Inventory items are required.")
+    private List<InventoryCheckItemRequest> items;
+
+    public List<InventoryCheckItemRequest> getItems() {
+        return items;
+    }
+
+    public void setItems(List<InventoryCheckItemRequest> items) {
+        this.items = items;
+    }
 }

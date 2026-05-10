@@ -6,6 +6,7 @@ import com.company.inventoryservice.service.InventoryService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -22,6 +23,7 @@ public class InventoryController {
         this.guidService = guidService;
     }
     @PostMapping("/")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String,String>> createInventory(@RequestBody CreateInventoryRequest request,
         @RequestHeader("X-ID") String userGuid){
         if(userGuid==null || !guidService.verifyUUID(userGuid)){
@@ -32,6 +34,7 @@ public class InventoryController {
         inventoryService.createInventory(request, userGuid);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/add/{guid}")
     public ResponseEntity<Map<String,String>> addInventoryStock(@PathVariable String guid,
             @RequestBody int units, @RequestHeader("X-ID") String userGuid){
@@ -43,6 +46,7 @@ public class InventoryController {
         response.put("message","Inventory updated successfully.");
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{guid}")
     public ResponseEntity<InventoryResponse> getInventoryByGuid(@PathVariable String productGuid){
         if(productGuid==null || !guidService.verifyUUID(productGuid)){
@@ -50,28 +54,14 @@ public class InventoryController {
         }
         return new ResponseEntity<>(inventoryService.getInventoryByGuid(productGuid), HttpStatus.OK);
     }
-    @PostMapping("/check")
-    public ResponseEntity<InventoryCheckResponse> checkItemsAvailability(@RequestBody @Valid InventoryCheckRequest request){
-        return new ResponseEntity<>(inventoryService.checkAvailability(request),HttpStatus.OK);
+    @PreAuthorize("hasAnyRole('ADMIN','CUSTOMER')")
+    @PostMapping("/checkout")
+    public ResponseEntity<InventoryCheckResponse> getInventoryAvailability(
+            @RequestBody @Valid InventoryCheckRequest request
+    ){
+        return new ResponseEntity<>(inventoryService.checkoutInventory(request), HttpStatus.OK);
     }
-    @PostMapping("/update-stock")
-    public ResponseEntity<Map<String,String>> updateItemStock(@RequestBody @Valid InventoryDeductRequest request){
-        inventoryService.updateItemAvailability(request);
-        Map<String,String> response = new HashMap<>();
-        response.put("message","Inventory stock updated successfully.");
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
-    @PatchMapping("/{guid}")
-    public ResponseEntity<Map<String,String>> updateInventoryToInactive(@PathVariable String guid,
-        @RequestHeader("X-ID") String userGuid) {
-        if (userGuid == null || !guidService.verifyUUID(userGuid)) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-        Map<String, String> response = new HashMap<>();
-        inventoryService.updateInventoryInactive(guid, userGuid);
-        response.put("message", "Inventory updated successfully.");
-        return new ResponseEntity<>(response, HttpStatus.OK);
-    }
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{guid}")
     public ResponseEntity<Map<String,String>> deactivateInventory(@PathVariable String guid,
        @RequestHeader("X-ID") String userGuid) {
