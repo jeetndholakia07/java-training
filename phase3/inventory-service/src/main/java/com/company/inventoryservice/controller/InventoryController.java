@@ -35,24 +35,23 @@ public class InventoryController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/add/{guid}")
-    public ResponseEntity<Map<String,String>> addInventoryStock(@PathVariable String guid,
-            @RequestBody int units, @RequestHeader("X-ID") String userGuid){
+    @PostMapping("/add")
+    public ResponseEntity<Map<String,String>> addInventoryStock(@RequestBody @Valid AddInventoryStockRequest request, @RequestHeader("X-ID") String userGuid){
         if(userGuid==null || !guidService.verifyUUID(userGuid)){
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         Map<String,String> response = new HashMap<>();
-        inventoryService.addInventoryStock(guid, units, userGuid);
+        inventoryService.addInventoryStock(request, userGuid);
         response.put("message","Inventory updated successfully.");
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{guid}")
-    public ResponseEntity<InventoryResponse> getInventoryByGuid(@PathVariable String productGuid){
-        if(productGuid==null || !guidService.verifyUUID(productGuid)){
+    public ResponseEntity<InventoryResponse> getInventoryByGuid(@PathVariable String guid){
+        if(guid==null || !guidService.verifyUUID(guid)){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>(inventoryService.getInventoryByGuid(productGuid), HttpStatus.OK);
+        return new ResponseEntity<>(inventoryService.getInventoryByGuid(guid), HttpStatus.OK);
     }
     @PreAuthorize("hasAnyRole('ADMIN','CUSTOMER')")
     @PostMapping("/checkout")

@@ -14,6 +14,6 @@ import java.util.List;
 public interface ProductRepository extends JpaRepository<Product,Integer> {
     Product findProductByProductName(String productName);
     Product findProductByGuid(String guid);
-    Page<Product> findProductsByProductNameAndDescriptionIgnoreCaseAndStatusIn(String productName, String description, Collection<StatusEnum> statuses, Pageable pageable);
+    Page<Product> findByProductNameOrDescriptionIgnoreCaseAndStatusIn(String productName, String description, Collection<StatusEnum> statuses, Pageable pageable);
     List<Product> findByGuidIn(Collection<String> guids);
 }

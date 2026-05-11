@@ -24,14 +24,12 @@ import java.util.stream.Collectors;
 @Service
 public class OrderService {
     private final OrderRepository orderRepository;
-    private final OrderItemRepository orderItemRepository;
     private final GuidService guidService;
     private final ProductFeignClient productFeignClient;
-    private InventoryFeignClient inventoryFeignClient;
-    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, GuidService guidService,
+    private final InventoryFeignClient inventoryFeignClient;
+    public OrderService(OrderRepository orderRepository, GuidService guidService,
                         ProductFeignClient productFeignClient, InventoryFeignClient inventoryFeignClient){
         this.orderRepository = orderRepository;
-        this.orderItemRepository = orderItemRepository;
         this.guidService = guidService;
         this.productFeignClient = productFeignClient;
         this.inventoryFeignClient = inventoryFeignClient;
@@ -51,8 +49,8 @@ public class OrderService {
         try{
             productListResponse = productFeignClient.getProductsByGuids(productGuids).getBody();
         }
-        catch (HttpClientErrorException e){
-            throw new RuntimeException("Error calling Product Service:"+e.getMessage());
+        catch (Exception e){
+            throw new RuntimeException("Something went wrong. Please try again.");
         }
 
         if(productListResponse==null || productListResponse.getProducts()==null || productListResponse.getProducts().isEmpty()){
@@ -88,6 +86,114 @@ public class OrderService {
         order.setOrderItems(orderItems);
         orderRepository.save(order);
     }
+
+    public void updateOrder(List<OrderRequest> requests, String orderGuid, String userGuid) {
+        if (orderGuid == null || !guidService.verifyUUID(orderGuid)) {
+            throw new IllegalArgumentException("Invalid order guid.");
+        }
+
+        Order order = orderRepository.findByOrderGuid(orderGuid);
+
+        if (order == null) {
+            throw new EntityNotFoundException("Order", "Order not found.");
+        }
+
+        if (order.getOrderStatus() == OrderStatus.C) {
+            throw new IllegalStateException("Completed orders cannot be updated.");
+        }
+
+        order.setLastUpdatedBy(userGuid);
+
+        List<String> productGuids = requests.stream()
+                .map(OrderRequest::getProductGuid)
+                .toList();
+
+        ProductListResponse productListResponse;
+
+        try {
+            productListResponse = productFeignClient
+            .getProductsByGuids(productGuids)
+            .getBody();
+        } catch (Exception e) {
+            throw new RuntimeException("Something went wrong. Please try again.");
+        }
+
+        if (productListResponse == null || productListResponse.getProducts() == null ||
+            productListResponse.getProducts().isEmpty()) {
+            throw new RuntimeException("No valid products found.");
+        }
+
+        if (productListResponse.getMissingGuids() != null &&
+            !productListResponse.getMissingGuids().isEmpty()) {
+            throw new RuntimeException(
+                    "Products not found: " +
+                            String.join(", ", productListResponse.getMissingGuids())
+            );
+        }
+
+        Map<String, ProductResponse> productMap =
+                productListResponse.getProducts()
+                        .stream()
+                        .collect(Collectors.toMap(
+                                ProductResponse::getProductGuid,
+                                p -> p
+                        ));
+
+        Map<String, OrderItem> existingItemsMap =
+                order.getOrderItems()
+                        .stream()
+                        .collect(Collectors.toMap(
+                                OrderItem::getProductGuid,
+                                item -> item
+                        ));
+
+        List<OrderItem> updatedItems = new ArrayList<>();
+
+        int totalItems = 0;
+        double totalPrice = 0.0;
+
+        for (OrderRequest request : requests) {
+            ProductResponse product =
+                    productMap.get(request.getProductGuid());
+
+            OrderItem item;
+
+            if (existingItemsMap.containsKey(request.getProductGuid())) {
+                item = existingItemsMap.get(request.getProductGuid());
+            } else {
+                item = new OrderItem();
+                item.setOrderItemGuid(guidService.generateUUID());
+                item.setCreatedBy(userGuid);
+                item.setOrder(order);
+            }
+
+            item.setLastUpdatedBy(userGuid);
+            item.setProductGuid(product.getProductGuid());
+            item.setProductName(product.getProductName());
+            item.setProductDescription(product.getDescription());
+            item.setProductPrice(product.getPricePerUnit());
+            item.setQty(request.getQuantity());
+
+            double subTotal =
+                    request.getQuantity() * product.getPricePerUnit();
+
+            item.setSubTotal(subTotal);
+
+            totalItems += item.getQty();
+            totalPrice += subTotal;
+
+            updatedItems.add(item);
+        }
+
+        order.getOrderItems().clear();
+        order.getOrderItems().addAll(updatedItems);
+
+        order.setTotalItems(totalItems);
+        order.setTotalPrice(totalPrice);
+
+        orderRepository.save(order);
+    }
+
     public PaginatedResponse<OrderResponse> getOrdersByUser(int page, int size, String userGuid){
         Pageable pageable = PageRequest.of(page,size);
         Page<Order> ordersPage = orderRepository.findByUserGuid(userGuid, pageable);
@@ -102,6 +208,7 @@ public class OrderService {
                 ordersPage.getTotalPages()
         );
     }
+
     public OrderResponse getOrderByGuid(String orderGuid){
         if(orderGuid==null || !guidService.verifyUUID(orderGuid)){
             throw new IllegalArgumentException("Invalid order guid.");
@@ -113,17 +220,22 @@ public class OrderService {
         return mapToOrderResponse(order);
     }
 
-    public CheckoutResponse checkoutOrder(String orderGuid){
+    public CheckoutResponse checkoutOrder(CheckoutRequest request){
+        final String orderGuid = request.getOrderGuid();
         if(orderGuid==null || !guidService.verifyUUID(orderGuid)){
             throw new IllegalArgumentException("Invalid order guid.");
         }
         Order order = orderRepository.findByOrderGuid(orderGuid);
+        if(order==null){
+            throw new EntityNotFoundException("Order","Order not found");
+        }
         InventoryCheckRequest checkRequest = getInventoryCheckRequest(order);
         InventoryCheckResponse response = null;
         try{
             response = inventoryFeignClient.checkInventoryAvailability(checkRequest).getBody();
         }
         catch (Exception e){
+            throw new RuntimeException("Something went wrong. Please try again.");
         }
         if(response==null){
             throw new RuntimeException("Failed to get inventory checkout.");
@@ -184,6 +296,7 @@ public class OrderService {
         response.setTotalPrice(order.getTotalPrice());
         List<OrderItemResponse> itemResponse = getOrderItemResponses(order);
         response.setOrderItems(itemResponse);
+        response.setTotalPrice(0.0);
         return response;
     }
 

@@ -24,9 +24,6 @@ public class AuthFilter extends OncePerRequestFilter {
         String role = request.getHeader("X-Role");
         String userId = request.getHeader("X-ID");
 
-        System.err.println("ROLE HEADER = " + role);
-        System.err.println("USER HEADER = " + userId);
-
         if (role != null && userId != null) {
 
             UsernamePasswordAuthenticationToken auth =
@@ -38,8 +35,6 @@ public class AuthFilter extends OncePerRequestFilter {
 
             SecurityContextHolder.getContext()
                     .setAuthentication(auth);
-
-            System.out.println("AUTHENTICATION SET");
         }
 
         filterChain.doFilter(request, response);

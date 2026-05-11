@@ -43,8 +43,8 @@ public class ProductService {
     public PaginatedResponse<ProductResponse> getPaginatedProducts(int page, int size, String search){
         Pageable pageable = PageRequest.of(page,size);
         Page<Product> productPage;
-        if(search==null || search.trim().isEmpty()){
-            productPage = productRepository.findProductsByProductNameAndDescriptionIgnoreCaseAndStatusIn(search,
+        if(search!=null && !search.trim().isEmpty()){
+            productPage = productRepository.findByProductNameOrDescriptionIgnoreCaseAndStatusIn(search,
             search, Collections.singleton(StatusEnum.A), pageable);
         } else{
             productPage = productRepository.findAll(pageable);

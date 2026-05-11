@@ -1,9 +1,6 @@
 package com.company.orderservice.controller;
 
-import com.company.orderservice.dto.CheckoutResponse;
-import com.company.orderservice.dto.OrderRequest;
-import com.company.orderservice.dto.OrderResponse;
-import com.company.orderservice.dto.PaginatedResponse;
+import com.company.orderservice.dto.*;
 import com.company.orderservice.service.GuidService;
 import com.company.orderservice.service.OrderService;
 import jakarta.validation.Valid;
@@ -51,12 +48,24 @@ public class OrderController {
     }
     @PreAuthorize("hasRole('CUSTOMER')")
     @GetMapping("/{guid}")
-    public ResponseEntity<OrderResponse> getOrderByGuid(@PathVariable String orderGuid){
-        return new ResponseEntity<>(orderService.getOrderByGuid(orderGuid), HttpStatus.OK);
+    public ResponseEntity<OrderResponse> getOrderByGuid(@PathVariable String guid){
+        return new ResponseEntity<>(orderService.getOrderByGuid(guid), HttpStatus.OK);
+    }
+    @PutMapping("/{guid}")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<Map<String, String>> updateCart(@PathVariable String guid,
+           @RequestBody @Valid List<OrderRequest> requests, @RequestHeader("X-ID") String userGuid){
+        if(!guidService.verifyUUID(userGuid)){
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        orderService.updateOrder(requests, guid, userGuid);
+        Map<String,String> response = new HashMap<>();
+        response.put("message","Order updated successfully");
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
     @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/checkout")
-    public ResponseEntity<CheckoutResponse> checkoutOrder(@RequestBody String orderGuid){
-        return new ResponseEntity<>(orderService.checkoutOrder(orderGuid), HttpStatus.OK);
+    public ResponseEntity<CheckoutResponse> checkoutOrder(@RequestBody @Valid CheckoutRequest request){
+        return new ResponseEntity<>(orderService.checkoutOrder(request), HttpStatus.OK);
     }
 }

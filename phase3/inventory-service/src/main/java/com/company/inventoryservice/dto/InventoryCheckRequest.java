@@ -1,11 +1,11 @@
 package com.company.inventoryservice.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 
 public class InventoryCheckRequest {
-    @NotBlank(message = "Inventory items are required.")
+    @NotNull(message = "Inventory items are required.")
     private List<InventoryCheckItemRequest> items;
 
     public List<InventoryCheckItemRequest> getItems() {

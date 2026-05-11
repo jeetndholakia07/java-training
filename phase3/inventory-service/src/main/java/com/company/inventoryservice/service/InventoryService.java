@@ -7,12 +7,10 @@ import com.company.inventoryservice.model.Inventory;
 import com.company.inventoryservice.repository.InventoryRepository;
 import com.company.inventoryservice.repository.ProductFeignClient;
 import com.company.inventoryservice.util.StatusEnum;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import feign.FeignException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,7 +28,25 @@ public class InventoryService {
         if(!guidService.verifyUUID(request.getProductGuid())){
             throw new IllegalArgumentException("Invalid product guid");
         }
-        if(inventoryRepository.findInventoryByProductGuid(request.getProductGuid())!=null){
+        try{
+            ProductResponse response = productFeignClient
+            .getProductByGuid(request.getProductGuid())
+            .getBody();
+
+            if (response == null) {
+                throw new EntityNotFoundException(
+                        "Product",
+                        "Product doesn't exist."
+                );
+            }
+        }
+        catch (FeignException e){
+            throw new EntityNotFoundException(
+                    "Product",
+                    "Product doesn't exist."
+            );
+        }
+        if(inventoryRepository.findByProductGuid(request.getProductGuid())!=null){
             throw new EntityExistsException("Inventory","Inventory not found");
         }
         Inventory inventory = new Inventory();
@@ -43,7 +59,7 @@ public class InventoryService {
         inventoryRepository.save(inventory);
     }
     public InventoryResponse getInventoryByGuid(String productGuid){
-        Inventory inventory = inventoryRepository.findInventoryByProductGuidAndStatusIn(productGuid, Collections.singleton(StatusEnum.A));
+        Inventory inventory = inventoryRepository.findByProductGuidAndStatusIn(productGuid, Collections.singleton(StatusEnum.A));
         if(inventory==null){
             throw new EntityNotFoundException("Inventory","Inventory not found");
         }
@@ -53,18 +69,18 @@ public class InventoryService {
         }
         return mapInventoryResponse(inventory,productResponse);
     }
-    public void addInventoryStock(String inventoryGuid, int units, String userGuid){
-        if(!guidService.verifyUUID(inventoryGuid)){
+    public void addInventoryStock(AddInventoryStockRequest request, String userGuid){
+        if(!guidService.verifyUUID(request.getProductGuid())){
             throw new IllegalArgumentException("Invalid inventory guid");
         }
-        Inventory inventory = inventoryRepository.findInventoryByProductGuid(inventoryGuid);
+        Inventory inventory = inventoryRepository.findByProductGuid(request.getProductGuid());
         if(inventory==null){
             throw new EntityNotFoundException("Inventory","Inventory not found");
         }
-        if(units<1){
+        if(request.getUnits()<1){
             throw new IllegalArgumentException("Inventory available units must be greater than 1.");
         }
-        inventory.setAvailableUnits(units);
+        inventory.setAvailableUnits(request.getUnits());
         inventory.setLastUpdatedBy(userGuid);
         inventoryRepository.save(inventory);
     }
@@ -131,7 +147,7 @@ public class InventoryService {
         if(!guidService.verifyUUID(inventoryGuid)){
             throw new IllegalArgumentException("Invalid inventory guid");
         }
-        Inventory inventory = inventoryRepository.findInventoryByProductGuid(inventoryGuid);
+        Inventory inventory = inventoryRepository.findByProductGuid(inventoryGuid);
         if(inventory==null){
             throw new EntityNotFoundException("Inventory","Inventory not found");
         }
@@ -144,6 +160,7 @@ public class InventoryService {
         response.setInventoryGuid(inventory.getGuid());
         response.setDescription(productResponse.getDescription());
         response.setProductGuid(inventory.getProductGuid());
+        response.setProductName(productResponse.getProductName());
         response.setAvailableUnits(inventory.getAvailableUnits());
         response.setPricePerUnit(productResponse.getPricePerUnit());
         response.setStatus(productResponse.getStatus());

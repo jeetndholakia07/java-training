@@ -25,7 +25,7 @@ public class JwtService {
                 .claim("username",payload.getUsername())
                 .claim("role",payload.getRole())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis()+3600_000))
+                .setExpiration(new Date(System.currentTimeMillis() + 60 * 60 * 1000))
                 .signWith(privateKey, SignatureAlgorithm.RS256)
                 .compact();
     }
