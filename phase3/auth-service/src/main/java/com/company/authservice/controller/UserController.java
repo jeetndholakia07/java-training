@@ -23,9 +23,9 @@ public class UserController {
     }
     @PostMapping("/register")
     public ResponseEntity<Map<String, String>> registerUser(@RequestBody @Valid UserRegisterRequest request){
+        userService.registerUser(request);
         Map<String, String> response = new HashMap<>();
         response.put("message", "User registered successfully.");
-        userService.registerUser(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
     @PostMapping("/login")

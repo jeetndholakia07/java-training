@@ -1,7 +1,6 @@
 package com.company.authservice.dto;
 
 import com.company.authservice.utils.RoleEnum;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public class RoleRequest {

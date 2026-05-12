@@ -17,10 +17,8 @@ import java.util.Map;
 @RequestMapping("/v1/order")
 public class OrderController {
     private final OrderService orderService;
-    private final GuidService guidService;
-    public OrderController(OrderService orderService, GuidService guidService){
+    public OrderController(OrderService orderService){
         this.orderService = orderService;
-        this.guidService = guidService;
     }
     @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/cart")

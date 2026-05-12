@@ -24,8 +24,8 @@ public class RoleController {
     @PostMapping("/")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String,String>> createRole(@RequestBody @Valid RoleRequest request){
-        Map<String,String> response = new HashMap<>();
         roleService.createRole(request);
+        Map<String,String> response = new HashMap<>();
         response.put("message", "Role created successfully.");
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }

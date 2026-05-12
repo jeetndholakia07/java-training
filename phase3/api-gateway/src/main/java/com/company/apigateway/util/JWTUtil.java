@@ -17,9 +17,7 @@ public class JWTUtil {
     }
 
     private PublicKey loadPublicKey(String envValue) throws Exception {
-        String pem = new String(
-                Base64.getDecoder().decode(envValue)
-        );
+        String pem = new String(Base64.getDecoder().decode(envValue));
 
         String sanitized = pem
                 .replace("-----BEGIN PUBLIC KEY-----", "")
@@ -28,8 +26,7 @@ public class JWTUtil {
 
         byte[] keyBytes = Base64.getDecoder().decode(sanitized);
 
-        X509EncodedKeySpec spec =
-                new X509EncodedKeySpec(keyBytes);
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
 
         return KeyFactory.getInstance("RSA").generatePublic(spec);
     }

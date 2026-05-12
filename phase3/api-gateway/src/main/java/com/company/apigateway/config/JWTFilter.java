@@ -35,7 +35,6 @@ public class JWTFilter implements GlobalFilter {
             ServerWebExchange exchange,
             GatewayFilterChain chain
     ) {
-
         String path = exchange.getRequest()
                 .getURI()
                 .getPath();
@@ -50,16 +49,13 @@ public class JWTFilter implements GlobalFilter {
                 .getHeaders()
                 .getFirst(HttpHeaders.AUTHORIZATION);
 
-        if (authHeader == null ||
-                !authHeader.startsWith("Bearer ")) {
-
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return unauthorized(exchange);
         }
 
         String token = authHeader.substring(7);
 
         if (!jwtUtil.validateToken(token)) {
-
             return unauthorized(exchange);
         }
 
@@ -77,7 +73,7 @@ public class JWTFilter implements GlobalFilter {
 
     private boolean isPublicRoute(String path) {
         return PUBLIC_ROUTES.stream()
-                .anyMatch(path::startsWith);
+        .anyMatch(path::startsWith);
     }
 
     private ServerWebExchange addGatewayHeader(
@@ -86,10 +82,7 @@ public class JWTFilter implements GlobalFilter {
         ServerHttpRequest request = exchange.getRequest()
                 .mutate()
                 .headers(headers ->
-                        headers.set(
-                                "X-Gateway-Secret",
-                                gatewaySecret
-                        )
+                        headers.set("X-Gateway-Secret", gatewaySecret)
                 )
                 .build();
 
@@ -107,7 +100,6 @@ public class JWTFilter implements GlobalFilter {
         ServerHttpRequest request = exchange.getRequest()
                 .mutate()
                 .headers(headers -> {
-
                     headers.set("X-User", username);
                     headers.set("X-ID", userGuid);
                     headers.set("X-Role", role);
@@ -123,7 +115,6 @@ public class JWTFilter implements GlobalFilter {
     private Mono<Void> unauthorized(
             ServerWebExchange exchange
     ) {
-
         exchange.getResponse()
                 .setStatusCode(HttpStatus.UNAUTHORIZED);
 

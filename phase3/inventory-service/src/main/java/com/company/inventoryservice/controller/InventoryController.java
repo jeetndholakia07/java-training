@@ -26,17 +26,17 @@ public class InventoryController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String,String>> createInventory(@RequestBody CreateInventoryRequest request,
         @RequestHeader("X-ID") String userGuid){
+        inventoryService.createInventory(request, userGuid);
         Map<String,String> response = new HashMap<>();
         response.put("message","Inventory created successfully.");
-        inventoryService.createInventory(request, userGuid);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/add")
     public ResponseEntity<Map<String,String>> addInventoryStock(@RequestBody @Valid AddInventoryStockRequest request,
         @RequestHeader("X-ID") String userGuid){
-        Map<String,String> response = new HashMap<>();
         inventoryService.addInventoryStock(request, userGuid);
+        Map<String,String> response = new HashMap<>();
         response.put("message","Inventory updated successfully.");
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -59,8 +59,8 @@ public class InventoryController {
     @DeleteMapping("/{guid}")
     public ResponseEntity<Map<String,String>> deactivateInventory(@PathVariable String guid,
        @RequestHeader("X-ID") String userGuid) {
-        Map<String, String> response = new HashMap<>();
         inventoryService.deactivateInventory(guid, userGuid);
+        Map<String, String> response = new HashMap<>();
         response.put("message", "Inventory deactivated successfully.");
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
