@@ -1,7 +1,7 @@
 package com.company.orderservice.utils;
 
 public enum OrderStatus {
-    P,
-    C,
-    D
+    P, //Pending
+    C, //Confirmed
+    D //Deleted(or Cancelled)
 }

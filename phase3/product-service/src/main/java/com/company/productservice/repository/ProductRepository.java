@@ -16,4 +16,5 @@ public interface ProductRepository extends JpaRepository<Product,Integer> {
     Product findProductByGuid(String guid);
     Page<Product> findByProductNameOrDescriptionIgnoreCaseAndStatusIn(String productName, String description, Collection<StatusEnum> statuses, Pageable pageable);
     List<Product> findByGuidIn(Collection<String> guids);
+    Page<Product> findByStatusIn(Collection<StatusEnum> statuses, Pageable pageable);
 }

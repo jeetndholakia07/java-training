@@ -5,16 +5,15 @@ import com.company.orderservice.exception.EntityNotFoundException;
 import com.company.orderservice.model.Order;
 import com.company.orderservice.model.OrderItem;
 import com.company.orderservice.repository.InventoryFeignClient;
-import com.company.orderservice.repository.OrderItemRepository;
 import com.company.orderservice.repository.OrderRepository;
 import com.company.orderservice.repository.ProductFeignClient;
 import com.company.orderservice.utils.OrderStatus;
+import feign.FeignException;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +33,7 @@ public class OrderService {
         this.productFeignClient = productFeignClient;
         this.inventoryFeignClient = inventoryFeignClient;
     }
-    public void addItemsToOrder(List<OrderRequest> requests, String userGuid){
+    public String addItemsToOrder(List<OrderRequest> requests, String userGuid){
         Order order = new Order();
         order.setUserGuid(userGuid);
         order.setOrderGuid(guidService.generateUUID());
@@ -49,8 +48,10 @@ public class OrderService {
         try{
             productListResponse = productFeignClient.getProductsByGuids(productGuids).getBody();
         }
-        catch (Exception e){
-            throw new RuntimeException("Something went wrong. Please try again.");
+        catch (FeignException.NotFound e) {
+            throw new EntityNotFoundException("Product", "Product not found.");
+        } catch (FeignException e) {
+            throw new RuntimeException("Product service unavailable. Please try again.");
         }
 
         if(productListResponse==null || productListResponse.getProducts()==null || productListResponse.getProducts().isEmpty()){
@@ -75,7 +76,8 @@ public class OrderService {
             item.setProductDescription(product.getDescription());
             item.setProductPrice(product.getPricePerUnit());
             item.setQty(request.getQuantity());
-            item.setSubTotal(0.0);
+            Double subTotal = request.getQuantity() * product.getPricePerUnit();
+            item.setSubTotal(subTotal);
             item.setCreatedBy(userGuid);
             item.setLastUpdatedBy(userGuid);
             item.setOrder(order);
@@ -84,7 +86,8 @@ public class OrderService {
         }
         order.setTotalItems(totalItems);
         order.setOrderItems(orderItems);
-        orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+        return savedOrder.getOrderGuid();
     }
 
     public void updateOrder(List<OrderRequest> requests, String orderGuid, String userGuid) {
@@ -96,6 +99,10 @@ public class OrderService {
 
         if (order == null) {
             throw new EntityNotFoundException("Order", "Order not found.");
+        }
+
+        if(!order.getUserGuid().equals(userGuid)){
+            throw new IllegalStateException("Unauthorized Access");
         }
 
         if (order.getOrderStatus() == OrderStatus.C) {
@@ -220,7 +227,7 @@ public class OrderService {
         return mapToOrderResponse(order);
     }
 
-    public CheckoutResponse checkoutOrder(CheckoutRequest request){
+    public CheckoutResponse checkoutOrder(CheckoutRequest request, String userGuid){
         final String orderGuid = request.getOrderGuid();
         if(orderGuid==null || !guidService.verifyUUID(orderGuid)){
             throw new IllegalArgumentException("Invalid order guid.");
@@ -228,6 +235,9 @@ public class OrderService {
         Order order = orderRepository.findByOrderGuid(orderGuid);
         if(order==null){
             throw new EntityNotFoundException("Order","Order not found");
+        }
+        if(!order.getUserGuid().equals(userGuid)){
+            throw new IllegalStateException("Unauthorized Access");
         }
         InventoryCheckRequest checkRequest = getInventoryCheckRequest(order);
         InventoryCheckResponse response = null;
@@ -296,7 +306,6 @@ public class OrderService {
         response.setTotalPrice(order.getTotalPrice());
         List<OrderItemResponse> itemResponse = getOrderItemResponses(order);
         response.setOrderItems(itemResponse);
-        response.setTotalPrice(0.0);
         return response;
     }
 

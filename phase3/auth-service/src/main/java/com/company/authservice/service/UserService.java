@@ -3,6 +3,7 @@ package com.company.authservice.service;
 import com.company.authservice.dto.UserLoginRequest;
 import com.company.authservice.dto.UserPayload;
 import com.company.authservice.dto.UserRegisterRequest;
+import com.company.authservice.exception.EntityExistsException;
 import com.company.authservice.exception.EntityNotFoundException;
 import com.company.authservice.model.Role;
 import com.company.authservice.model.User;
@@ -35,7 +36,7 @@ public class UserService {
             throw new IllegalStateException("Invalid password");
         }
         if(userRepository.getUserByEmail(request.getEmail())!=null){
-            throw new EntityNotFoundException("User","User already exists.");
+            throw new EntityExistsException("User","User already exists.");
         }
         User user = new User();
         user.setUsername(request.getUsername());
@@ -51,16 +52,16 @@ public class UserService {
     }
     public Map<String,String> verifyUser(UserLoginRequest request){
         if(!regexValidation.validateEmail(request.getEmail()) || !regexValidation.validatePassword(request.getPassword())){
-            throw new IllegalStateException("Invalid email or password.");
+            throw new IllegalStateException("Invalid credentials.");
         }
         User user = userRepository.getUserByEmail(request.getEmail());
         if(user==null){
-            throw new IllegalStateException("Invalid email or password");
+            throw new IllegalStateException("Invalid credentials.");
         }
         String hashedPassword = user.getPasswordHash();
         boolean isValid = authService.verifyPassword(request.getPassword(),hashedPassword);
         if(!isValid){
-            throw new IllegalStateException("Invalid email or password.");
+            throw new IllegalStateException("Invalid credentials.");
         }
         UserPayload userPayload = new UserPayload();
         Map<String,String> response = new HashMap<>();

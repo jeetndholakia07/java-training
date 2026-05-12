@@ -29,9 +29,6 @@ public class ProductController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String,String>> createProduct(@RequestBody @Valid CreateProductRequest request,
         @RequestHeader("X-ID") String userGuid){
-        if(userGuid==null || !guidService.verifyUUID(userGuid)){
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
         Map<String,String> response = new HashMap<>();
         productService.createProduct(request,userGuid);
         response.put("message","Product created successfully.");
@@ -80,9 +77,6 @@ public class ProductController {
     @DeleteMapping("/{guid}")
     public ResponseEntity<Map<String,String>> deactivateProduct(@PathVariable String guid,
         @RequestHeader("X-ID") String userGuid){
-        if(userGuid==null || !guidService.verifyUUID(userGuid)){
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
         if(!guidService.verifyUUID(guid)){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }

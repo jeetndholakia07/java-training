@@ -26,12 +26,10 @@ public class OrderController {
     @PostMapping("/cart")
     public ResponseEntity<Map<String,String>> addOrderToCart(@RequestBody @Valid List<OrderRequest> request,
         @RequestHeader("X-ID") String userGuid){
-        if(!guidService.verifyUUID(userGuid)){
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-        orderService.addItemsToOrder(request,userGuid);
+        String orderGuid = orderService.addItemsToOrder(request,userGuid);
         Map<String,String> response = new HashMap<>();
         response.put("message","Order created successfully");
+        response.put("orderGuid", orderGuid);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
     @PreAuthorize("hasRole('CUSTOMER')")
@@ -41,9 +39,6 @@ public class OrderController {
             @RequestParam(defaultValue = "5") int size,
             @RequestHeader("X-ID") String userGuid
     ){
-        if(!guidService.verifyUUID(userGuid)){
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
         return new ResponseEntity<>(orderService.getOrdersByUser(page,size,userGuid), HttpStatus.OK);
     }
     @PreAuthorize("hasRole('CUSTOMER')")
@@ -54,10 +49,7 @@ public class OrderController {
     @PutMapping("/{guid}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<Map<String, String>> updateCart(@PathVariable String guid,
-           @RequestBody @Valid List<OrderRequest> requests, @RequestHeader("X-ID") String userGuid){
-        if(!guidService.verifyUUID(userGuid)){
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
+    @RequestBody @Valid List<OrderRequest> requests, @RequestHeader("X-ID") String userGuid){
         orderService.updateOrder(requests, guid, userGuid);
         Map<String,String> response = new HashMap<>();
         response.put("message","Order updated successfully");
@@ -65,7 +57,8 @@ public class OrderController {
     }
     @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/checkout")
-    public ResponseEntity<CheckoutResponse> checkoutOrder(@RequestBody @Valid CheckoutRequest request){
-        return new ResponseEntity<>(orderService.checkoutOrder(request), HttpStatus.OK);
+    public ResponseEntity<CheckoutResponse> checkoutOrder(@RequestBody @Valid CheckoutRequest request,
+        @RequestHeader("X-ID") String userGuid){
+        return new ResponseEntity<>(orderService.checkoutOrder(request, userGuid), HttpStatus.OK);
     }
 }

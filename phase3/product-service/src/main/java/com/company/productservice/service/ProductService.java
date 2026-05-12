@@ -47,7 +47,7 @@ public class ProductService {
             productPage = productRepository.findByProductNameOrDescriptionIgnoreCaseAndStatusIn(search,
             search, Collections.singleton(StatusEnum.A), pageable);
         } else{
-            productPage = productRepository.findAll(pageable);
+            productPage = productRepository.findByStatusIn(Collections.singleton(StatusEnum.A), pageable);
         }
         List<ProductResponse> data = productPage
                 .getContent()

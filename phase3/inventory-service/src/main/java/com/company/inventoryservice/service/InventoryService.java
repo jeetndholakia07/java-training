@@ -24,6 +24,7 @@ public class InventoryService {
         this.guidService = service;
         this.productFeignClient = productFeignClient;
     }
+    @Transactional
     public void createInventory(CreateInventoryRequest request, String userGuid){
         if(!guidService.verifyUUID(request.getProductGuid())){
             throw new IllegalArgumentException("Invalid product guid");
@@ -40,14 +41,17 @@ public class InventoryService {
                 );
             }
         }
-        catch (FeignException e){
+        catch (FeignException.NotFound e){
             throw new EntityNotFoundException(
                     "Product",
                     "Product doesn't exist."
             );
         }
+        catch (FeignException e){
+            throw new RuntimeException("Product service unavailable. Please try again.");
+        }
         if(inventoryRepository.findByProductGuid(request.getProductGuid())!=null){
-            throw new EntityExistsException("Inventory","Inventory not found");
+            throw new EntityExistsException("Inventory","Inventory already exists for the product.");
         }
         Inventory inventory = new Inventory();
         inventory.setGuid(guidService.generateUUID());
@@ -69,6 +73,7 @@ public class InventoryService {
         }
         return mapInventoryResponse(inventory,productResponse);
     }
+    @Transactional
     public void addInventoryStock(AddInventoryStockRequest request, String userGuid){
         if(!guidService.verifyUUID(request.getProductGuid())){
             throw new IllegalArgumentException("Invalid inventory guid");
@@ -80,7 +85,7 @@ public class InventoryService {
         if(request.getUnits()<1){
             throw new IllegalArgumentException("Inventory available units must be greater than 1.");
         }
-        inventory.setAvailableUnits(request.getUnits());
+        inventory.setAvailableUnits(inventory.getAvailableUnits()+request.getUnits());
         inventory.setLastUpdatedBy(userGuid);
         inventoryRepository.save(inventory);
     }
@@ -147,7 +152,7 @@ public class InventoryService {
         if(!guidService.verifyUUID(inventoryGuid)){
             throw new IllegalArgumentException("Invalid inventory guid");
         }
-        Inventory inventory = inventoryRepository.findByProductGuid(inventoryGuid);
+        Inventory inventory = inventoryRepository.findByGuid(inventoryGuid);
         if(inventory==null){
             throw new EntityNotFoundException("Inventory","Inventory not found");
         }
