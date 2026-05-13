@@ -1,4 +1,4 @@
-package com.company.productservice.dto;
+package com.company.productservice.dto.response;
 
 import com.company.productservice.util.StatusEnum;
 

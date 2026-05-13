@@ -1,9 +1,9 @@
 package com.company.productservice.controller;
 
-import com.company.productservice.dto.CreateProductRequest;
-import com.company.productservice.dto.PaginatedResponse;
-import com.company.productservice.dto.ProductResponse;
-import com.company.productservice.dto.UpdateProductRequest;
+import com.company.productservice.dto.request.CreateProductRequest;
+import com.company.productservice.dto.response.PaginatedResponse;
+import com.company.productservice.dto.response.ProductResponse;
+import com.company.productservice.dto.request.UpdateProductRequest;
 import com.company.productservice.service.GuidService;
 import com.company.productservice.service.ProductService;
 import jakarta.validation.Valid;

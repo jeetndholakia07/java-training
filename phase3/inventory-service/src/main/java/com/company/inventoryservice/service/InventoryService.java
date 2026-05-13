@@ -29,6 +29,9 @@ public class InventoryService {
         if(!guidService.verifyUUID(request.getProductGuid())){
             throw new IllegalArgumentException("Invalid product guid");
         }
+        if(inventoryRepository.findByProductGuid(request.getProductGuid())!=null){
+            throw new EntityExistsException("Inventory","Inventory already exists for the product.");
+        }
         try{
             ProductResponse response = productFeignClient
             .getProductByGuid(request.getProductGuid())
@@ -49,9 +52,6 @@ public class InventoryService {
         }
         catch (FeignException e){
             throw new RuntimeException("Product service unavailable. Please try again.");
-        }
-        if(inventoryRepository.findByProductGuid(request.getProductGuid())!=null){
-            throw new EntityExistsException("Inventory","Inventory already exists for the product.");
         }
         Inventory inventory = new Inventory();
         inventory.setGuid(guidService.generateUUID());
