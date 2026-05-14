@@ -73,7 +73,7 @@ public class JWTFilter implements GlobalFilter {
 
     private boolean isPublicRoute(String path) {
         return PUBLIC_ROUTES.stream()
-        .anyMatch(path::startsWith);
+                .anyMatch(path::startsWith);
     }
 
     private ServerWebExchange addGatewayHeader(

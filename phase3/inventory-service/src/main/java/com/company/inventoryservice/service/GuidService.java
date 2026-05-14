@@ -6,12 +6,15 @@ import java.util.UUID;
 
 @Service
 public class GuidService {
-    public GuidService(){}
-    public String generateUUID(){
+    public GuidService() {
+    }
+
+    public String generateUUID() {
         return UUID.randomUUID().toString();
     }
-    public boolean verifyUUID(String text){
-        try{
+
+    public boolean verifyUUID(String text) {
+        try {
             UUID.fromString(text);
             return true;
         } catch (IllegalArgumentException e) {

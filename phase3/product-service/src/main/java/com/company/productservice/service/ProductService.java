@@ -1,11 +1,13 @@
 package com.company.productservice.service;
 
-import com.company.productservice.dto.CreateProductRequest;
-import com.company.productservice.dto.PaginatedResponse;
-import com.company.productservice.dto.ProductResponse;
-import com.company.productservice.dto.UpdateProductRequest;
+import com.company.productservice.dto.request.CreateProductRequest;
+import com.company.productservice.dto.response.PaginatedResponse;
+import com.company.productservice.dto.response.ProductListResponse;
+import com.company.productservice.dto.response.ProductResponse;
+import com.company.productservice.dto.request.UpdateProductRequest;
 import com.company.productservice.exception.EntityExistsException;
 import com.company.productservice.exception.EntityNotFoundException;
+import com.company.productservice.mapper.ProductMapper;
 import com.company.productservice.model.Product;
 import com.company.productservice.repository.ProductRepository;
 import com.company.productservice.util.StatusEnum;
@@ -21,39 +23,39 @@ import java.util.stream.Collectors;
 public class ProductService {
     private final ProductRepository productRepository;
     private final GuidService guidService;
-    public ProductService(ProductRepository productRepository, GuidService guidService){
+    private final ProductMapper productMapper;
+
+    public ProductService(ProductRepository productRepository, GuidService guidService, ProductMapper mapper) {
         this.productRepository = productRepository;
         this.guidService = guidService;
+        this.productMapper = mapper;
     }
-    public void createProduct(CreateProductRequest request, String userGuid){
-        if(productRepository.findProductByProductName(request.getProductName())!=null){
+
+    public void createProduct(CreateProductRequest request, String userGuid) {
+        if (productRepository.findProductByProductName(request.productName()) != null) {
             throw new EntityExistsException("Product", "Product exists already.");
         }
-        Product product = new Product();
+        Product product = productMapper.toEntity(request);
         product.setGuid(guidService.generateUUID());
-        product.setProductName(request.getProductName());
-        product.setDescription(request.getDescription());
         product.setCreatedBy(userGuid);
         product.setStatus(StatusEnum.A);
-        product.setPricePerUnit(request.getPricePerUnit());
         product.setLastUpdatedBy(userGuid);
         productRepository.save(product);
     }
 
-    public PaginatedResponse<ProductResponse> getPaginatedProducts(int page, int size, String search){
-        Pageable pageable = PageRequest.of(page,size);
+    public PaginatedResponse<ProductResponse> getPaginatedProducts(int page, int size, String search) {
+        Pageable pageable = PageRequest.of(page, size);
         Page<Product> productPage;
-        if(search!=null && !search.trim().isEmpty()){
-            productPage = productRepository.findByProductNameOrDescriptionIgnoreCaseAndStatusIn(search,
-            search, Collections.singleton(StatusEnum.A), pageable);
-        } else{
+        if (search != null && !search.trim().isEmpty()) {
+            productPage = productRepository.searchProducts(search,
+            Collections.singleton(StatusEnum.A), pageable);
+        } else {
             productPage = productRepository.findByStatusIn(Collections.singleton(StatusEnum.A), pageable);
         }
-        List<ProductResponse> data = productPage
+        List<ProductResponse> data = productMapper.toResponseList(productPage
                 .getContent()
                 .stream()
-                .map(this::mapToResponse)
-                .toList();
+                .toList());
         return new PaginatedResponse<>(
                 data,
                 productPage.getNumber(),
@@ -62,72 +64,52 @@ public class ProductService {
         );
     }
 
-    public ProductResponse getProductByGuid(String guid){
+    public ProductResponse getProductByGuid(String guid) {
         Product product = productRepository.findProductByGuid(guid);
-        if(product==null){
-            throw new EntityNotFoundException("Product","Product not found.");
+        if (product == null) {
+            throw new EntityNotFoundException("Product", "Product not found.");
         }
-        return mapToResponse(product);
+        return productMapper.toResponse(product);
     }
 
-    public Map<String, Object> getProductsByGuids(List<String> guids){
-        Map<String, Object> result = new HashMap<>();
-        if(guids==null || guids.isEmpty()){
-            result.put("products",Collections.emptyList());
-            result.put("missingGuids",Collections.emptyList());
-            return result;
+    public ProductListResponse getProductsByGuids(List<String> guids) {
+        if (guids == null || guids.isEmpty()) {
+            return new ProductListResponse(
+                    Collections.emptyList(),
+                    Collections.emptyList()
+            );
         }
         Set<String> uniqueGuids = new HashSet<>(guids);
         List<Product> products = productRepository.findByGuidIn(uniqueGuids);
         List<ProductResponse> productResponses = products.stream()
-                .map(this::mapToResponse)
+                .map(productMapper::toResponse)
                 .toList();
         Set<String> foundGuids = products.stream()
                 .map(Product::getGuid)
                 .collect(Collectors.toSet());
         List<String> missingGuids = uniqueGuids.stream()
-                .filter(g->!foundGuids.contains(g))
+                .filter(g -> !foundGuids.contains(g))
                 .toList();
-        result.put("products", productResponses);
-        result.put("missingGuids",missingGuids);
-        return result;
+        return new ProductListResponse(productResponses, missingGuids);
     }
 
-    public void updateProduct(String guid, UpdateProductRequest request, String userGuid){
+    public void updateProduct(String guid, UpdateProductRequest request, String userGuid) {
         Product product = productRepository.findProductByGuid(guid);
-        if(product==null){
-            throw new EntityNotFoundException("Product","Product not found.");
+        if (product == null) {
+            throw new EntityNotFoundException("Product", "Product not found.");
         }
-        if(request.getDescription()!=null){
-            if(request.getDescription().trim().isEmpty()){
-                throw new IllegalArgumentException("Product description cannot be empty.");
-            }
-            product.setDescription(request.getDescription());
-        }
-        if(request.getPricePerUnit()!=null){
-            product.setPricePerUnit(request.getPricePerUnit());
-        }
+        productMapper.updateEntityFromDto(request, product);
         product.setLastUpdatedBy(userGuid);
         productRepository.save(product);
     }
 
-    public void deactivateProduct(String productGuid, String userGuid){
+    public void deactivateProduct(String productGuid, String userGuid) {
         Product product = productRepository.findProductByGuid(productGuid);
-        if(product==null || product.getStatus()==StatusEnum.D){
-            throw new EntityNotFoundException("Product","Product not found.");
+        if (product == null || product.getStatus() == StatusEnum.D) {
+            throw new EntityNotFoundException("Product", "Product not found.");
         }
         product.setStatus(StatusEnum.D);
         product.setLastUpdatedBy(userGuid);
         productRepository.save(product);
-    }
-
-    public ProductResponse mapToResponse(Product product){
-        ProductResponse response = new ProductResponse();
-        response.setDescription(product.getDescription());
-        response.setProductName(product.getProductName());
-        response.setPricePerUnit(product.getPricePerUnit());
-        response.setProductGuid(product.getGuid());
-        response.setStatus(product.getStatus());
-        return response;
     }
 }

@@ -1,6 +1,6 @@
 package com.company.orderservice.repository;
 
-import com.company.orderservice.dto.ProductListResponse;
+import com.company.orderservice.dto.response.ProductListResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;

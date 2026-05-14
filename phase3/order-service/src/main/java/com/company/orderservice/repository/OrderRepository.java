@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 public interface OrderRepository extends JpaRepository<Order, Integer> {
     @EntityGraph(attributePaths = {"orderItems"})
     Page<Order> findByUserGuid(String userGuid, Pageable pageable);
+
     @EntityGraph(attributePaths = {"orderItems"})
     Order findByOrderGuid(String orderGuid);
 }

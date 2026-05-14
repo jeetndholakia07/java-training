@@ -10,5 +10,4 @@ import org.springframework.stereotype.Repository;
 public interface UserRepository extends JpaRepository<User, Integer> {
     @Query("select u from User u JOIN FETCH u.role where u.email=:email")
     User getUserByEmail(@Param("email") String email);
-    User getUserByGuid(String guid);
 }
