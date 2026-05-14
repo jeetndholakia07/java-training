@@ -12,23 +12,18 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Component
 public class AuthFeignInterceptor implements RequestInterceptor {
-
     @Value("${GATEWAY_SECRET}")
     private String gatewaySecret;
 
     @Override
     public void apply(RequestTemplate template) {
-        RequestAttributes requestAttributes =
-                RequestContextHolder.getRequestAttributes();
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
 
         if (requestAttributes != null) {
+            HttpServletRequest request = ((ServletRequestAttributes) requestAttributes)
+               .getRequest();
 
-            HttpServletRequest request =
-                    ((ServletRequestAttributes) requestAttributes)
-                            .getRequest();
-
-            String authHeader =
-                    request.getHeader(HttpHeaders.AUTHORIZATION);
+            String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
             if (authHeader != null) {
                 template.header(HttpHeaders.AUTHORIZATION, authHeader);
@@ -45,7 +40,6 @@ public class AuthFeignInterceptor implements RequestInterceptor {
                 template.header("X-ID", id);
             }
         }
-
         template.header("X-Gateway-Secret", gatewaySecret);
     }
 }

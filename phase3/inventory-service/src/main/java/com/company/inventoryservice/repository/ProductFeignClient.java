@@ -1,6 +1,6 @@
 package com.company.inventoryservice.repository;
 
-import com.company.inventoryservice.dto.ProductResponse;
+import com.company.inventoryservice.dto.response.ProductResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

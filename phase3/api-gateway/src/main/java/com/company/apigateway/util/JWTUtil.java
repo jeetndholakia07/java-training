@@ -12,7 +12,8 @@ import java.util.Base64;
 @Component
 public class JWTUtil {
     private final PublicKey publicKey;
-    public JWTUtil() throws Exception{
+
+    public JWTUtil() throws Exception {
         this.publicKey = loadPublicKey(System.getenv("JWT_PUBLIC_KEY"));
     }
 
@@ -31,20 +32,19 @@ public class JWTUtil {
         return KeyFactory.getInstance("RSA").generatePublic(spec);
     }
 
-    public boolean validateToken(String token){
-        try{
+    public boolean validateToken(String token) {
+        try {
             Jwts.parserBuilder()
                     .setSigningKey(publicKey)
                     .build()
                     .parseClaimsJws(token);
             return true;
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             return false;
         }
     }
 
-    public Claims extractClaims(String token){
+    public Claims extractClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(publicKey)
                 .build()

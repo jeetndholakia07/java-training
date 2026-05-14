@@ -14,8 +14,11 @@ import java.util.List;
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, Integer> {
     Inventory findByProductGuid(String productGuid);
+
     Inventory findByProductGuidAndStatusIn(String productGuid, Collection<StatusEnum> statuses);
+
     Inventory findByGuid(String inventoryGuid);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select i from Inventory i where i.productGuid IN :productGuids AND i.status IN :statuses")
     List<Inventory> lockInventories(List<String> productGuids, Collection<StatusEnum> statuses);

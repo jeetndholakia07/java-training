@@ -1,6 +1,13 @@
 package com.company.inventoryservice.service;
 
-import com.company.inventoryservice.dto.*;
+import com.company.inventoryservice.dto.request.AddInventoryStockRequest;
+import com.company.inventoryservice.dto.request.CreateInventoryRequest;
+import com.company.inventoryservice.dto.request.InventoryCheckItemRequest;
+import com.company.inventoryservice.dto.request.InventoryCheckRequest;
+import com.company.inventoryservice.dto.response.InventoryAvailability;
+import com.company.inventoryservice.dto.response.InventoryCheckResponse;
+import com.company.inventoryservice.dto.response.InventoryResponse;
+import com.company.inventoryservice.dto.response.ProductResponse;
 import com.company.inventoryservice.exception.EntityExistsException;
 import com.company.inventoryservice.exception.EntityNotFoundException;
 import com.company.inventoryservice.model.Inventory;
@@ -19,23 +26,25 @@ public class InventoryService {
     private final InventoryRepository inventoryRepository;
     private final GuidService guidService;
     private final ProductFeignClient productFeignClient;
-    public InventoryService(InventoryRepository repository, GuidService service, ProductFeignClient productFeignClient){
+
+    public InventoryService(InventoryRepository repository, GuidService service, ProductFeignClient productFeignClient) {
         this.inventoryRepository = repository;
         this.guidService = service;
         this.productFeignClient = productFeignClient;
     }
+
     @Transactional
-    public void createInventory(CreateInventoryRequest request, String userGuid){
-        if(!guidService.verifyUUID(request.getProductGuid())){
-            throw new IllegalArgumentException("Invalid product guid");
+    public void createInventory(CreateInventoryRequest request, String userGuid) {
+        if (!guidService.verifyUUID(request.productGuid())) {
+            throw new IllegalArgumentException("Invalid product guid.");
         }
-        if(inventoryRepository.findByProductGuid(request.getProductGuid())!=null){
-            throw new EntityExistsException("Inventory","Inventory already exists for the product.");
+        if (inventoryRepository.findByProductGuid(request.productGuid()) != null) {
+            throw new EntityExistsException("Inventory", "Inventory already exists for the product.");
         }
-        try{
+        try {
             ProductResponse response = productFeignClient
-            .getProductByGuid(request.getProductGuid())
-            .getBody();
+                    .getProductByGuid(request.productGuid())
+                    .getBody();
 
             if (response == null) {
                 throw new EntityNotFoundException(
@@ -44,131 +53,135 @@ public class InventoryService {
                 );
             }
         }
-        catch (FeignException.NotFound e){
-            throw new EntityNotFoundException(
-                    "Product",
-                    "Product doesn't exist."
-            );
-        }
-        catch (FeignException e){
+        catch (FeignException e) {
             throw new RuntimeException("Product service unavailable. Please try again.");
         }
         Inventory inventory = new Inventory();
         inventory.setGuid(guidService.generateUUID());
-        inventory.setProductGuid(request.getProductGuid());
+        inventory.setProductGuid(request.productGuid());
         inventory.setCreatedBy(userGuid);
         inventory.setLastUpdatedBy(userGuid);
         inventory.setStatus(StatusEnum.A);
-        inventory.setAvailableUnits(request.getAvailableUnits());
+        inventory.setAvailableUnits(request.availableUnits());
         inventoryRepository.save(inventory);
     }
-    public InventoryResponse getInventoryByGuid(String productGuid){
+
+    public InventoryResponse getInventoryByGuid(String productGuid) {
         Inventory inventory = inventoryRepository.findByProductGuidAndStatusIn(productGuid, Collections.singleton(StatusEnum.A));
-        if(inventory==null){
-            throw new EntityNotFoundException("Inventory","Inventory not found");
+        if (inventory == null) {
+            throw new EntityNotFoundException("Inventory", "Inventory not found.");
         }
-        ProductResponse productResponse = productFeignClient.getProductByGuid(productGuid).getBody();
-        if(productResponse==null){
-            throw new EntityNotFoundException("Product","Product doesn't exist in inventory.");
+        ProductResponse productResponse;
+        try{
+            productResponse = productFeignClient.getProductByGuid(productGuid).getBody();
         }
-        return mapInventoryResponse(inventory,productResponse);
+        catch (FeignException e){
+            throw new RuntimeException("Product service unavailable. Please try again.");
+        }
+        if (productResponse == null) {
+            throw new EntityNotFoundException("Product", "Product doesn't exist in inventory.");
+        }
+        return mapInventoryResponse(inventory, productResponse);
     }
+
     @Transactional
-    public void addInventoryStock(AddInventoryStockRequest request, String userGuid){
-        if(!guidService.verifyUUID(request.getProductGuid())){
-            throw new IllegalArgumentException("Invalid inventory guid");
+    public void addInventoryStock(AddInventoryStockRequest request, String userGuid) {
+        if (!guidService.verifyUUID(request.productGuid())) {
+            throw new IllegalArgumentException("Invalid product guid.");
         }
-        Inventory inventory = inventoryRepository.findByProductGuid(request.getProductGuid());
-        if(inventory==null){
-            throw new EntityNotFoundException("Inventory","Inventory not found");
+        Inventory inventory = inventoryRepository.findByProductGuid(request.productGuid());
+        if (inventory == null) {
+            throw new EntityNotFoundException("Inventory", "Inventory not found.");
         }
-        if(request.getUnits()<1){
-            throw new IllegalArgumentException("Inventory available units must be greater than 1.");
-        }
-        inventory.setAvailableUnits(inventory.getAvailableUnits()+request.getUnits());
+        inventory.setAvailableUnits(inventory.getAvailableUnits() + request.units());
         inventory.setLastUpdatedBy(userGuid);
         inventoryRepository.save(inventory);
     }
 
     @Transactional
-    public InventoryCheckResponse checkoutInventory(InventoryCheckRequest request){
-        List<String> productGuids = request.getItems()
+    public InventoryCheckResponse checkoutInventory(InventoryCheckRequest request) {
+        List<String> productGuids = request.items()
                 .stream()
-                .map(InventoryCheckItemRequest::getProductGuid)
+                .map(InventoryCheckItemRequest::productGuid)
                 .toList();
         List<Inventory> inventories = inventoryRepository.lockInventories(productGuids, Collections.singleton(StatusEnum.A));
         Map<String, Inventory> inventoryMap = inventories.stream()
                 .collect(Collectors.toMap(
                         Inventory::getProductGuid,
-                        inv->inv
+                        inv -> inv
                 ));
         boolean checkoutAllowed = true;
         List<InventoryAvailability> responses = new ArrayList<>();
-        for(InventoryCheckItemRequest item : request.getItems()){
-            Inventory inventory = inventoryMap.get(item.getProductGuid());
-            if(inventory==null){
+        for (InventoryCheckItemRequest item : request.items()) {
+            Inventory inventory = inventoryMap.get(item.productGuid());
+            if (inventory == null) {
                 checkoutAllowed = false;
                 responses.add(
                         new InventoryAvailability(
-                                item.getProductGuid(),
+                                item.productGuid(),
                                 false,
-                                item.getRequestedQty(),
+                                item.requestedQty(),
                                 0,
                                 "Inventory not found"
                         )
                 );
                 continue;
             }
-            boolean available = inventory.getAvailableUnits()>=item.getRequestedQty();
-            if(!available){
+            boolean available = inventory.getAvailableUnits() >= item.requestedQty();
+            if (!available) {
                 checkoutAllowed = false;
             }
             responses.add(new InventoryAvailability(
-                    item.getProductGuid(),
+                    item.productGuid(),
                     available,
-                    item.getRequestedQty(),
+                    item.requestedQty(),
                     inventory.getAvailableUnits(),
                     available ? "Available" : "Insufficient stock"
             ));
         }
-        if(!checkoutAllowed){
+        if (!checkoutAllowed) {
             return new InventoryCheckResponse(
                     false,
                     responses
             );
         }
-        for(InventoryCheckItemRequest item: request.getItems()){
-            Inventory inventory = inventoryMap.get(item.getProductGuid());
-            inventory.setAvailableUnits(inventory.getAvailableUnits()- item.getRequestedQty());
+        List<Inventory> updatedInventories = new ArrayList<>();
+        for (InventoryCheckItemRequest item : request.items()) {
+            Inventory inventory = inventoryMap.get(item.productGuid());
+            inventory.setAvailableUnits(
+                    inventory.getAvailableUnits() - item.requestedQty()
+            );
+            updatedInventories.add(inventory);
         }
-        inventoryRepository.saveAll(inventories);
+        inventoryRepository.saveAll(updatedInventories);
         return new InventoryCheckResponse(
                 checkoutAllowed,
                 responses
         );
     }
 
-    public void deactivateInventory(String inventoryGuid, String userGuid){
-        if(!guidService.verifyUUID(inventoryGuid)){
-            throw new IllegalArgumentException("Invalid inventory guid");
+    public void deactivateInventory(String inventoryGuid, String userGuid) {
+        if (!guidService.verifyUUID(inventoryGuid)) {
+            throw new IllegalArgumentException("Invalid inventory guid.");
         }
         Inventory inventory = inventoryRepository.findByGuid(inventoryGuid);
-        if(inventory==null){
-            throw new EntityNotFoundException("Inventory","Inventory not found");
+        if (inventory == null) {
+            throw new EntityNotFoundException("Inventory", "Inventory not found.");
         }
         inventory.setStatus(StatusEnum.D);
         inventory.setLastUpdatedBy(userGuid);
         inventoryRepository.save(inventory);
     }
-    public InventoryResponse mapInventoryResponse(Inventory inventory, ProductResponse productResponse){
-        InventoryResponse response = new InventoryResponse();
-        response.setInventoryGuid(inventory.getGuid());
-        response.setDescription(productResponse.getDescription());
-        response.setProductGuid(inventory.getProductGuid());
-        response.setProductName(productResponse.getProductName());
-        response.setAvailableUnits(inventory.getAvailableUnits());
-        response.setPricePerUnit(productResponse.getPricePerUnit());
-        response.setStatus(productResponse.getStatus());
-        return response;
+
+    public InventoryResponse mapInventoryResponse(Inventory inventory, ProductResponse productResponse) {
+        return new InventoryResponse(
+                inventory.getGuid(),
+                inventory.getAvailableUnits(),
+                productResponse.productName(),
+                productResponse.description(),
+                productResponse.pricePerUnit(),
+                productResponse.productGuid(),
+                productResponse.status()
+        );
     }
 }

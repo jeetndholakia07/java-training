@@ -22,13 +22,10 @@ public class AuthFeignInterceptor implements RequestInterceptor {
                 RequestContextHolder.getRequestAttributes();
 
         if (requestAttributes != null) {
+            HttpServletRequest request = ((ServletRequestAttributes) requestAttributes)
+            .getRequest();
 
-            HttpServletRequest request =
-                    ((ServletRequestAttributes) requestAttributes)
-                            .getRequest();
-
-            String authHeader =
-                    request.getHeader(HttpHeaders.AUTHORIZATION);
+            String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
             if (authHeader != null) {
                 template.header(HttpHeaders.AUTHORIZATION, authHeader);

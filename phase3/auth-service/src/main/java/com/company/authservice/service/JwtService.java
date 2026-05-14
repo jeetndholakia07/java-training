@@ -15,15 +15,17 @@ import java.util.Date;
 @Service
 public class JwtService {
     private final PrivateKey privateKey;
+
     public JwtService() throws Exception {
         this.privateKey = loadPrivateKey(System.getenv("JWT_PRIVATE_KEY"));
     }
-    public String generateToken(UserPayload payload){
+
+    public String generateToken(UserPayload payload) {
         return Jwts.builder()
-                .setSubject(String.valueOf(payload.getUserGuid()))
-                .claim("userGuid",payload.getUserGuid())
-                .claim("username",payload.getUsername())
-                .claim("role",payload.getRole())
+                .setSubject(String.valueOf(payload.userGuid()))
+                .claim("userGuid", payload.userGuid())
+                .claim("username", payload.username())
+                .claim("role", payload.role())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 60 * 60 * 1000))
                 .signWith(privateKey, SignatureAlgorithm.RS256)

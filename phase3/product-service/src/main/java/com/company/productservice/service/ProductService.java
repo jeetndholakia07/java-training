@@ -2,6 +2,7 @@ package com.company.productservice.service;
 
 import com.company.productservice.dto.request.CreateProductRequest;
 import com.company.productservice.dto.response.PaginatedResponse;
+import com.company.productservice.dto.response.ProductListResponse;
 import com.company.productservice.dto.response.ProductResponse;
 import com.company.productservice.dto.request.UpdateProductRequest;
 import com.company.productservice.exception.EntityExistsException;
@@ -22,7 +23,7 @@ import java.util.stream.Collectors;
 public class ProductService {
     private final ProductRepository productRepository;
     private final GuidService guidService;
-    private ProductMapper productMapper;
+    private final ProductMapper productMapper;
 
     public ProductService(ProductRepository productRepository, GuidService guidService, ProductMapper mapper) {
         this.productRepository = productRepository;
@@ -46,8 +47,8 @@ public class ProductService {
         Pageable pageable = PageRequest.of(page, size);
         Page<Product> productPage;
         if (search != null && !search.trim().isEmpty()) {
-            productPage = productRepository.findByProductNameOrDescriptionIgnoreCaseAndStatusIn(search,
-                    search, Collections.singleton(StatusEnum.A), pageable);
+            productPage = productRepository.searchProducts(search,
+            Collections.singleton(StatusEnum.A), pageable);
         } else {
             productPage = productRepository.findByStatusIn(Collections.singleton(StatusEnum.A), pageable);
         }
@@ -71,17 +72,17 @@ public class ProductService {
         return productMapper.toResponse(product);
     }
 
-    public Map<String, Object> getProductsByGuids(List<String> guids) {
-        Map<String, Object> result = new HashMap<>();
+    public ProductListResponse getProductsByGuids(List<String> guids) {
         if (guids == null || guids.isEmpty()) {
-            result.put("products", Collections.emptyList());
-            result.put("missingGuids", Collections.emptyList());
-            return result;
+            return new ProductListResponse(
+                    Collections.emptyList(),
+                    Collections.emptyList()
+            );
         }
         Set<String> uniqueGuids = new HashSet<>(guids);
         List<Product> products = productRepository.findByGuidIn(uniqueGuids);
         List<ProductResponse> productResponses = products.stream()
-                .map(pr->productMapper.toResponse(pr))
+                .map(productMapper::toResponse)
                 .toList();
         Set<String> foundGuids = products.stream()
                 .map(Product::getGuid)
@@ -89,17 +90,15 @@ public class ProductService {
         List<String> missingGuids = uniqueGuids.stream()
                 .filter(g -> !foundGuids.contains(g))
                 .toList();
-        result.put("products", productResponses);
-        result.put("missingGuids", missingGuids);
-        return result;
+        return new ProductListResponse(productResponses, missingGuids);
     }
 
     public void updateProduct(String guid, UpdateProductRequest request, String userGuid) {
         Product product = productRepository.findProductByGuid(guid);
-        if(product == null){
+        if (product == null) {
             throw new EntityNotFoundException("Product", "Product not found.");
         }
-        productMapper.updateEntityFromDto(request,product);
+        productMapper.updateEntityFromDto(request, product);
         product.setLastUpdatedBy(userGuid);
         productRepository.save(product);
     }

@@ -18,18 +18,21 @@ import java.util.Map;
 @RequestMapping("/v1/auth")
 public class UserController {
     private final UserService userService;
-    public UserController(UserService userService){
+
+    public UserController(UserService userService) {
         this.userService = userService;
     }
+
     @PostMapping("/register")
-    public ResponseEntity<Map<String, String>> registerUser(@RequestBody @Valid UserRegisterRequest request){
+    public ResponseEntity<Map<String, String>> registerUser(@RequestBody @Valid UserRegisterRequest request) {
         userService.registerUser(request);
         Map<String, String> response = new HashMap<>();
         response.put("message", "User registered successfully.");
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
     @PostMapping("/login")
-    public ResponseEntity<Map<String,String>> loginUser(@RequestBody @Valid UserLoginRequest request){
+    public ResponseEntity<Map<String, String>> loginUser(@RequestBody @Valid UserLoginRequest request) {
         return new ResponseEntity<>(userService.verifyUser(request), HttpStatus.OK);
     }
 }

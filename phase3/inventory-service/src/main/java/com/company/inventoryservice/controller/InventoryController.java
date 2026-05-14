@@ -1,6 +1,10 @@
 package com.company.inventoryservice.controller;
 
-import com.company.inventoryservice.dto.*;
+import com.company.inventoryservice.dto.request.AddInventoryStockRequest;
+import com.company.inventoryservice.dto.request.CreateInventoryRequest;
+import com.company.inventoryservice.dto.request.InventoryCheckRequest;
+import com.company.inventoryservice.dto.response.InventoryCheckResponse;
+import com.company.inventoryservice.dto.response.InventoryResponse;
 import com.company.inventoryservice.service.GuidService;
 import com.company.inventoryservice.service.InventoryService;
 import jakarta.validation.Valid;
@@ -10,7 +14,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -18,47 +21,53 @@ import java.util.Map;
 public class InventoryController {
     private final InventoryService inventoryService;
     private final GuidService guidService;
-    public InventoryController(InventoryService inventoryService, GuidService guidService){
+
+    public InventoryController(InventoryService inventoryService, GuidService guidService) {
         this.inventoryService = inventoryService;
         this.guidService = guidService;
     }
+
     @PostMapping("/")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String,String>> createInventory(@RequestBody CreateInventoryRequest request,
-        @RequestHeader("X-ID") String userGuid){
+    public ResponseEntity<Map<String, String>> createInventory(@RequestBody CreateInventoryRequest request,
+        @RequestHeader("X-ID") String userGuid) {
         inventoryService.createInventory(request, userGuid);
-        Map<String,String> response = new HashMap<>();
-        response.put("message","Inventory created successfully.");
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Inventory created successfully.");
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/add")
-    public ResponseEntity<Map<String,String>> addInventoryStock(@RequestBody @Valid AddInventoryStockRequest request,
-        @RequestHeader("X-ID") String userGuid){
+    public ResponseEntity<Map<String, String>> addInventoryStock(@RequestBody @Valid AddInventoryStockRequest request,
+        @RequestHeader("X-ID") String userGuid) {
         inventoryService.addInventoryStock(request, userGuid);
-        Map<String,String> response = new HashMap<>();
-        response.put("message","Inventory updated successfully.");
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Inventory updated successfully.");
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{guid}")
-    public ResponseEntity<InventoryResponse> getInventoryByGuid(@PathVariable String guid){
-        if(guid==null || !guidService.verifyUUID(guid)){
+    public ResponseEntity<InventoryResponse> getInventoryByGuid(@PathVariable String guid) {
+        if (guid == null || !guidService.verifyUUID(guid)) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         return new ResponseEntity<>(inventoryService.getInventoryByGuid(guid), HttpStatus.OK);
     }
+
     @PreAuthorize("hasAnyRole('ADMIN','CUSTOMER')")
     @PostMapping("/checkout")
     public ResponseEntity<InventoryCheckResponse> getInventoryAvailability(
-            @RequestBody @Valid InventoryCheckRequest request
-    ){
+      @RequestBody @Valid InventoryCheckRequest request
+    ) {
         return new ResponseEntity<>(inventoryService.checkoutInventory(request), HttpStatus.OK);
     }
+
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{guid}")
-    public ResponseEntity<Map<String,String>> deactivateInventory(@PathVariable String guid,
-       @RequestHeader("X-ID") String userGuid) {
+    public ResponseEntity<Map<String, String>> deactivateInventory(@PathVariable String guid,
+        @RequestHeader("X-ID") String userGuid) {
         inventoryService.deactivateInventory(guid, userGuid);
         Map<String, String> response = new HashMap<>();
         response.put("message", "Inventory deactivated successfully.");

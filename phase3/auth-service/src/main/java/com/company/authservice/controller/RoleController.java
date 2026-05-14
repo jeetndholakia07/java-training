@@ -18,14 +18,16 @@ import java.util.Map;
 @RequestMapping("/v1/roles")
 public class RoleController {
     private final RoleService roleService;
-    public RoleController(RoleService roleService){
+
+    public RoleController(RoleService roleService) {
         this.roleService = roleService;
     }
+
     @PostMapping("/")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String,String>> createRole(@RequestBody @Valid RoleRequest request){
+    public ResponseEntity<Map<String, String>> createRole(@RequestBody @Valid RoleRequest request) {
         roleService.createRole(request);
-        Map<String,String> response = new HashMap<>();
+        Map<String, String> response = new HashMap<>();
         response.put("message", "Role created successfully.");
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }

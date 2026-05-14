@@ -1,4 +1,4 @@
-package com.company.inventoryservice.dto;
+package com.company.orderservice.dto.response;
 
 import java.util.List;
 
